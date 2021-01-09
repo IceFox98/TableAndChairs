@@ -14,6 +14,7 @@ ADynamicMesh::ADynamicMesh()
 
 	Mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(RootComponent);
+
 }
 
 // Called when the game starts or when spawned
@@ -31,7 +32,7 @@ void ADynamicMesh::Tick(float DeltaTime)
 
 void ADynamicMesh::BuildMesh()
 {
-
+	//Nothing
 }
 
 void ADynamicMesh::GenerateMesh(TArray<FLinearColor> VertexColors)

@@ -2,7 +2,12 @@
 
 
 #include "Table.h"
-//#include "DynamicMesh.h"
+#include "Components/SceneComponent.h"
+#include "Components/BoxComponent.h"
+#include "Engine/TriggerVolume.h"
+#include "Chair.h"
+#include "TableLeg.h"
+#include "ResizePoint.h"
 
 // Sets default values
 ATable::ATable()
@@ -10,11 +15,26 @@ ATable::ATable()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	/*Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	SetRootComponent(Root);
+	VertexCount = (6 * 4); //6 faces with 4 vertices each
+	Vertices.AddUninitialized(VertexCount);
 
-	Mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Mesh"));
-	Mesh->SetupAttachment(RootComponent);*/
+	TrianglesCount = (6 * 2 * 3); //2 triangles per face, 3 vertices each
+	Triangles.AddUninitialized(TrianglesCount);
+
+	Width = 100;
+	Length = 300;
+	Height = 20;
+
+	ResizePointsCount = 4;
+
+	//UE_LOG(LogTemp, Warning, TEXT("ATable"));
+
+	for (int32 i = 0; i < ResizePointsCount; i++)
+	{
+		UResizePoint* rp = CreateDefaultSubobject<UResizePoint>(TEXT("ResizePoint" + i));
+		rp->SetupAttachment(Mesh);
+		ResizePoints.Add(rp);
+	}
 
 }
 
@@ -23,23 +43,29 @@ void ATable::BeginPlay()
 {
 	Super::BeginPlay();
 
-	VertexCount = (6 * 4); //6 faces with 4 vertices each
-	Vertices.AddUninitialized(VertexCount);
-
-	TrianglesCount = (6 * 2 * 3); //2 triangles per face, 3 vertices each
-	Triangles.AddUninitialized(TrianglesCount);
-
-	Width = 300;
-	Length = 100;
-	Height = 20;
-
 	BuildMesh();
+
+	FBox Bounds = Mesh->Bounds.GetBox();
+
+	Mesh->Bounds.GetBox().GetCenter();
+	ResizePoints[0]->SetRelativeLocation(FVector(Bounds.Min.X, Bounds.Min.Y, Bounds.Max.Z));
+	ResizePoints[1]->SetRelativeLocation(FVector(Bounds.Min.X, Bounds.Max.Y, Bounds.Max.Z));
+	ResizePoints[2]->SetRelativeLocation(FVector(Bounds.Max.X, Bounds.Min.Y, Bounds.Max.Z));
+	ResizePoints[3]->SetRelativeLocation(FVector(Bounds.Max.X, Bounds.Max.Y, Bounds.Max.Z));
+
 }
 
 // Called every frame
 void ATable::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+
+	//GetWorld()->LineTraceSingleByChannel()
+	
+	//GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint();
+
+	UpdateLegsTransform();
 
 }
 
@@ -49,8 +75,8 @@ void ATable::BuildMesh()
 
 	//6 sides on cube, 4 verts each (corners)
 
-	//FVector scale = FVector(3, 1, 0.2);
-	FVector position = FVector(-50, 50, 100);
+	FVector scale = FVector(Width, Length, Height);
+	FVector position = FVector(0, 0, 100);
 
 	FVector V1 = FVector(0, 0, 0); //Front - Bottom Left
 	FVector V2 = FVector(1, 0, 0); //Front - Bottom Right
@@ -68,10 +94,13 @@ void ATable::BuildMesh()
 	BuildQuad(V4, V3, V8, V7); //Top Face
 	BuildQuad(V6, V5, V2, V1); //Bottom Face
 
+	FTransform* t = new FTransform(FRotator::ZeroRotator, position, scale);
+	FMatrix m = t->ToMatrixWithScale();
+
 	for (int32 i = 0; i < Vertices.Num(); i++)
 	{
 		//(Vertices[i] *= scale) + position;
-		(Vertices[i] *= FVector(Width, Length, Height)) + position;
+		Vertices[i] = m.TransformPosition(Vertices[i]);
 	}
 
 	TArray<FLinearColor> VertexColors;
@@ -88,19 +117,27 @@ void ATable::BuildMesh()
 
 	const int32 legCount = 4;
 
-	TArray<FVector> legPositions = { FVector(0, 0, 0), FVector(0, 0, 0), FVector(0, 0, 0), FVector(0, 0, 0) };
-
 	for (int32 i = 0; i < legCount; i++)
 	{
 		ATableLeg* leg = GetWorld()->SpawnActor<ATableLeg>(ATableLeg::StaticClass());
 
-		for (int32 k = 0; k < leg->Vertices.Num(); k++)
+		if (leg)
 		{
-			leg->Vertices[k] += FVector(100 * i, 0, 0);
+			leg->GenerateMesh(TArray<FLinearColor>());
+			Legs.Add(leg);
 		}
-
-		leg->GenerateMesh(TArray<FLinearColor>());
-		Legs.Add(leg);
 	}
 
+}
+
+void ATable::UpdateLegsTransform()
+{
+	FBox Bounds = Mesh->Bounds.GetBox();
+	int32 legWidth = Legs[0]->Width;
+	int32 legLength = Legs[0]->Length;
+
+	Legs[0]->SetActorLocation(FVector(Bounds.Min.X, Bounds.Max.Y, Bounds.Min.Z));
+	Legs[1]->SetActorLocation(FVector(Bounds.Min.X, Bounds.Min.Y + legLength, Bounds.Min.Z));
+	Legs[2]->SetActorLocation(FVector(Bounds.Max.X - legWidth, Bounds.Max.Y, Bounds.Min.Z));
+	Legs[3]->SetActorLocation(FVector(Bounds.Max.X - legWidth, Bounds.Min.Y + legLength, Bounds.Min.Z));
 }

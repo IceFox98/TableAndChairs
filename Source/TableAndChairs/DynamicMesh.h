@@ -27,6 +27,10 @@ public:
 
 	void GenerateMesh(TArray<FLinearColor> VertexColors);
 
+	int32 Width = 0;
+	int32 Length = 0;
+	int32 Height = 0;
+
 protected:
 
 	UPROPERTY(VisibleAnywhere)
@@ -45,9 +49,6 @@ protected:
 	int32 TrianglesCount = 0;
 	int32 TrianglesIndex = 0;
 
-	int32 Width = 0;
-	int32 Length = 0;
-	int32 Height = 0;
 
 	void BuildQuad(const FVector bottomLeft, const FVector bottomRight, const FVector topRight, const FVector topLeft);
 };

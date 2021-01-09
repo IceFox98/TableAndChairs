@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "DynamicMesh.h"
-#include "Chair.h"
-#include "TableLeg.h"
 #include "Table.generated.h"
+
+class AChair;
+class ATableLeg;
+class UResizePoint;
 
 UCLASS()
 class TABLEANDCHAIRS_API ATable : public ADynamicMesh
@@ -31,14 +33,15 @@ protected:
 
 	//TMap<AActor, ADynamicMesh> ResizePoints;
 
-	//TArray<FVector> Vertices;
-	//TArray<int32> Triangles;
+public:
 
-	//int32 VertexCount = 0;
-	//int32 VertexIndex = 0;
+	UPROPERTY(VisibleAnywhere)
+		TArray<UResizePoint*> ResizePoints;
 
-	//int32 TrianglesCount = 0;
-	//int32 TrianglesIndex = 0;
+	UPROPERTY(EditDefaultsOnly)
+		int32 ResizePointsCount = 0;
 
-	//void BuildQuad(const FVector bottomLeft, const FVector bottomRight, const FVector topRight, const FVector topLeft);
+private:
+
+	void UpdateLegsTransform();
 };

@@ -13,6 +13,7 @@ void ATableAndChairsGameModeBase::BeginPlay()
 	//UE_LOG(LogTemp, Warning, TEXT("Begin Play"));
 
 	GenerateTableAndChairs();
+
 }
 
 void ATableAndChairsGameModeBase::GenerateTableAndChairs()
