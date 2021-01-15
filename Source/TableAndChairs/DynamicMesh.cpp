@@ -40,17 +40,17 @@ void ADynamicMesh::GenerateMesh(TArray<FLinearColor> VertexColors)
 	Mesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, TArray<FVector>(), TArray<FVector2D>(), VertexColors, TArray<FProcMeshTangent>(), true);
 }
 
-void ADynamicMesh::BuildQuad(const FVector bottomLeft, const FVector bottomRight, const FVector topRight, const FVector topLeft)
+void ADynamicMesh::BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft)
 {
 	const int32 Index1 = VertexIndex++;
 	const int32 Index2 = VertexIndex++;
 	const int32 Index3 = VertexIndex++;
 	const int32 Index4 = VertexIndex++;
 
-	Vertices[Index1] = bottomLeft;
-	Vertices[Index2] = bottomRight;
-	Vertices[Index3] = topRight;
-	Vertices[Index4] = topLeft;
+	Vertices[Index1] = BottomLeft;
+	Vertices[Index2] = BottomRight;
+	Vertices[Index3] = TopRight;
+	Vertices[Index4] = TopLeft;
 
 	Triangles[TrianglesIndex++] = Index1;
 	Triangles[TrianglesIndex++] = Index2;
@@ -58,4 +58,14 @@ void ADynamicMesh::BuildQuad(const FVector bottomLeft, const FVector bottomRight
 	Triangles[TrianglesIndex++] = Index1;
 	Triangles[TrianglesIndex++] = Index3;
 	Triangles[TrianglesIndex++] = Index4;
+}
+
+void ADynamicMesh::BuildCube(const FVector &FrontBottomLeft, const FVector &FrontBottomRight, const FVector &FrontTopRight, const FVector &FrontTopLeft, const FVector &BackBottomLeft, const FVector &BackBottomRight, const FVector &BackTopRight, const FVector &BackTopLeft)
+{
+	BuildQuad(FrontBottomLeft, FrontBottomRight, FrontTopRight, FrontTopLeft); //Front Face
+	BuildQuad(FrontBottomRight, BackBottomLeft, BackTopLeft, FrontTopRight); //Right Face
+	BuildQuad(BackBottomRight, FrontBottomLeft, FrontTopLeft, BackTopRight); //Left Face
+	BuildQuad(BackBottomLeft, BackBottomRight, BackTopRight, BackTopLeft); //Back Face
+	BuildQuad(FrontTopLeft, FrontTopRight, BackTopLeft, BackTopRight); //Top Face
+	BuildQuad(BackBottomRight, BackBottomLeft, FrontBottomRight, FrontBottomLeft); //Bottom Face
 }

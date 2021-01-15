@@ -8,7 +8,7 @@
 
 class AChair;
 class ATableLeg;
-class UResizePoint;
+class AResizePoint;
 
 UCLASS()
 class TABLEANDCHAIRS_API ATable : public ADynamicMesh
@@ -31,17 +31,31 @@ protected:
 	TArray<AChair*> Chairs;
 	TArray<ATableLeg*> Legs;
 
-	//TMap<AActor, ADynamicMesh> ResizePoints;
-
 public:
 
 	UPROPERTY(VisibleAnywhere)
-		TArray<UResizePoint*> ResizePoints;
+		TArray<AResizePoint*> ResizePoints;
 
 	UPROPERTY(EditDefaultsOnly)
 		int32 ResizePointsCount = 0;
 
 private:
+	APlayerController* PlayerController;
 
+	bool bRecordingMovement;
+	FVector StartHitPoint;
+	FVector StartCenter;
+
+	TArray<FVector> StartVertices;
+
+	void StartRecordingMovement();
+	void StopRecordingMovement();
+
+	void UpdateTableMesh(const FVector &MovementAmount);
 	void UpdateLegsTransform();
+	void UpdateResizePointsTransform();
+
+	void UpdateTransforms(TArray<AActor*> ActorsToUpdate, const TArray<FVector> &NewPositions);
+
+	void CalculateChairs();
 };

@@ -17,6 +17,6 @@ class TABLEANDCHAIRS_API ATableAndChairsGameModeBase : public AGameModeBase
 protected:
 	virtual void BeginPlay() override;
 
-	void GenerateTableAndChairs();
+	void SpawnMesh();
 
 };

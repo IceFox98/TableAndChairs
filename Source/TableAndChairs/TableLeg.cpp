@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "TableLeg.h"
 
 ATableLeg::ATableLeg()
@@ -18,8 +17,8 @@ void ATableLeg::BeginPlay()
 	TrianglesCount = (6 * 2 * 3); //2 triangles per face, 3 vertices each
 	Triangles.AddUninitialized(TrianglesCount);
 
-	Width = 10;
-	Length = 10;
+	Width = 20;
+	Length = 20;
 	Height = 100;
 
 	BuildMesh();
@@ -29,14 +28,14 @@ void ATableLeg::BuildMesh()
 {
 	Super::BuildMesh();
 
-	FVector V1 = FVector(0, 0, -1); //Front - Bottom Left
-	FVector V2 = FVector(1, 0, -1); //Front - Bottom Right
-	FVector V3 = FVector(1, 0, 0); //Front - Top Right
-	FVector V4 = FVector(0, 0, 0); //Front - Top Left
-	FVector V5 = FVector(1, -1, -1); //Back - Bottom Left
-	FVector V6 = FVector(0, -1, -1); //Back - Bottom Right
-	FVector V7 = FVector(0, -1, 0); //Back - Top Right
-	FVector V8 = FVector(1, -1, 0); //Back - Top Left
+	FVector V1 = FVector(0, 0, 0); //Front - Bottom Left
+	FVector V2 = FVector(0, 1, 0); //Front - Bottom Right
+	FVector V3 = FVector(0, 1, 1); //Front - Top Right
+	FVector V4 = FVector(0, 0, 1); //Front - Top Left
+	FVector V5 = FVector(1, 1, 0); //Back - Bottom Left
+	FVector V6 = FVector(1, 0, 0); //Back - Bottom Right
+	FVector V7 = FVector(1, 0, 1); //Back - Top Right
+	FVector V8 = FVector(1, 1, 1); //Back - Top Left
 
 	BuildQuad(V1, V2, V3, V4); //Front Face
 	BuildQuad(V2, V5, V8, V3); //Right Face

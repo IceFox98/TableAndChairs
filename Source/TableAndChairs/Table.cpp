@@ -2,12 +2,14 @@
 
 
 #include "Table.h"
-#include "Components/SceneComponent.h"
-#include "Components/BoxComponent.h"
-#include "Engine/TriggerVolume.h"
 #include "Chair.h"
 #include "TableLeg.h"
 #include "ResizePoint.h"
+#include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
+//#include "Kismet/KismetSystemLibrary.h"
+#include "DrawDebugHelpers.h"
+#include "Math/UnrealMathUtility.h"
 
 // Sets default values
 ATable::ATable()
@@ -21,21 +23,12 @@ ATable::ATable()
 	TrianglesCount = (6 * 2 * 3); //2 triangles per face, 3 vertices each
 	Triangles.AddUninitialized(TrianglesCount);
 
-	Width = 100;
-	Length = 300;
+	Width = 200;
+	Length = 200;
 	Height = 20;
 
 	ResizePointsCount = 4;
-
-	//UE_LOG(LogTemp, Warning, TEXT("ATable"));
-
-	for (int32 i = 0; i < ResizePointsCount; i++)
-	{
-		UResizePoint* rp = CreateDefaultSubobject<UResizePoint>(TEXT("ResizePoint" + i));
-		rp->SetupAttachment(Mesh);
-		ResizePoints.Add(rp);
-	}
-
+	bRecordingMovement = false;
 }
 
 // Called when the game starts or when spawned
@@ -45,13 +38,71 @@ void ATable::BeginPlay()
 
 	BuildMesh();
 
-	FBox Bounds = Mesh->Bounds.GetBox();
+	//Generate Table's Legs
+	const int32 LegCount = 4;
 
-	Mesh->Bounds.GetBox().GetCenter();
-	ResizePoints[0]->SetRelativeLocation(FVector(Bounds.Min.X, Bounds.Min.Y, Bounds.Max.Z));
-	ResizePoints[1]->SetRelativeLocation(FVector(Bounds.Min.X, Bounds.Max.Y, Bounds.Max.Z));
-	ResizePoints[2]->SetRelativeLocation(FVector(Bounds.Max.X, Bounds.Min.Y, Bounds.Max.Z));
-	ResizePoints[3]->SetRelativeLocation(FVector(Bounds.Max.X, Bounds.Max.Y, Bounds.Max.Z));
+	for (int32 i = 0; i < LegCount; i++)
+	{
+		ATableLeg* Leg = GetWorld()->SpawnActor<ATableLeg>(ATableLeg::StaticClass());
+
+		if (Leg)
+		{
+			Leg->GenerateMesh(TArray<FLinearColor>());
+			Legs.Add(Leg);
+		}
+	}
+
+	//Generate ResizePoints
+	for (int32 i = 0; i < ResizePointsCount; i++)
+	{
+		AResizePoint* ResizePointInstance = GetWorld()->SpawnActor<AResizePoint>(AResizePoint::StaticClass());
+		ResizePointInstance->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+		ResizePoints.Add(ResizePointInstance);
+	}
+
+	UpdateResizePointsTransform();
+	UpdateLegsTransform();
+
+	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	if (PlayerController && PlayerController->InputComponent)
+	{
+		PlayerController->InputComponent->BindAction("RecordMovement", IE_Pressed, this, &ATable::StartRecordingMovement);
+		PlayerController->InputComponent->BindAction("RecordMovement", IE_Released, this, &ATable::StopRecordingMovement);
+	}
+}
+
+
+void ATable::BuildMesh()
+{
+	Super::BuildMesh();
+
+	//6 sides on cube, 4 verts each (corners)
+
+	FVector Scale = FVector(Width, Length, Height);
+	FVector Position = FVector(0, 0, 100 + Height);
+
+	BuildCube(FVector(0, 0, 0), FVector(0, 1, 0), FVector(0, 1, 1), FVector(0, 0, 1), FVector(1, 1, 0), FVector(1, 0, 0), FVector(1, 0, 1), FVector(1, 1, 1));
+
+	FTransform* TableTransform = new FTransform(FRotator::ZeroRotator, Position, Scale);
+	FMatrix TableMatrix = TableTransform->ToMatrixWithScale();
+
+	for (int32 i = 0; i < Vertices.Num(); i++)
+	{
+		Vertices[i] = TableMatrix.TransformPosition(Vertices[i]);
+	}
+
+	TArray<FLinearColor> VertexColors;
+	//VertexColors.Add(FLinearColor(0.f, 0.f, 1.f));
+	//VertexColors.Add(FLinearColor(1.f, 0.f, 0.f));
+	//VertexColors.Add(FLinearColor(1.f, 0.f, 0.f));
+	//VertexColors.Add(FLinearColor(0.f, 1.f, 0.f));
+	//VertexColors.Add(FLinearColor(0.5f, 1.f, 0.5f));
+	//VertexColors.Add(FLinearColor(0.f, 1.f, 0.f));
+	//VertexColors.Add(FLinearColor(1.f, 1.f, 0.f));
+	//VertexColors.Add(FLinearColor(0.f, 1.f, 1.f));
+
+	GenerateMesh(VertexColors);
 
 }
 
@@ -60,84 +111,187 @@ void ATable::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (!PlayerController)
+	{
+		return;
+	}
 
-	//GetWorld()->LineTraceSingleByChannel()
-	
-	//GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint();
+	if (bRecordingMovement) //Calculate movement
+	{
+		//Get camera position (player)
+		FVector PlayerStartPosition;
+		FRotator PlayerStartRotation;
+		PlayerController->GetPlayerViewPoint(PlayerStartPosition, PlayerStartRotation);
 
-	UpdateLegsTransform();
+		//Cast raycast, it will ignore everything but floor
+		FHitResult HitResult;
+		PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, HitResult);
 
+		//Create a plane at ResizePoint position, and get the point where raycast intersect it, due to get the correct amount of movement
+		FVector IntersectionPoint;
+		FPlane Plane = FPlane(StartHitPoint, FVector(0, 0, 1));
+		bool bIntersect = FMath::SegmentPlaneIntersection(PlayerStartPosition, HitResult.ImpactPoint, Plane, IntersectionPoint);
+
+		FVector MovementAmount = FVector::ZeroVector;
+
+		if (bIntersect)
+		{
+			//DrawDebugLine(GetWorld(), PlayerStartPosition, IntersectionPoint, FColor::Green, true);
+			MovementAmount = IntersectionPoint - StartHitPoint;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("NO INTERSECT"));
+			StopRecordingMovement();
+			return;
+		}
+
+		//UE_LOG(LogTemp, Warning, TEXT("Recording - Start: %s - Hit: %s - MovementAmount: %s"), *StartHitPoint.ToString(), *HitResult.ImpactPoint.ToString(), *MovementAmount.ToString());
+
+		UpdateTableMesh(MovementAmount);
+		UpdateResizePointsTransform();
+		UpdateLegsTransform();
+	}
 }
 
-void ATable::BuildMesh()
+/**
+ * Updates the Mesh of the table according to the point hit by mouse.
+ * @param MovementAmount - The total movement tracked by the mouse.
+ */
+void ATable::UpdateTableMesh(const FVector &MovementAmount)
 {
-	Super::BuildMesh();
-
-	//6 sides on cube, 4 verts each (corners)
-
-	FVector scale = FVector(Width, Length, Height);
-	FVector position = FVector(0, 0, 100);
-
-	FVector V1 = FVector(0, 0, 0); //Front - Bottom Left
-	FVector V2 = FVector(1, 0, 0); //Front - Bottom Right
-	FVector V3 = FVector(1, 0, 1); //Front - Top Right
-	FVector V4 = FVector(0, 0, 1); //Front - Top Left
-	FVector V5 = FVector(1, -1, 0); //Back - Bottom Left
-	FVector V6 = FVector(0, -1, 0); //Back - Bottom Right
-	FVector V7 = FVector(0, -1, 1); //Back - Top Right
-	FVector V8 = FVector(1, -1, 1); //Back - Top Left
-
-	BuildQuad(V1, V2, V3, V4); //Front Face
-	BuildQuad(V2, V5, V8, V3); //Right Face
-	BuildQuad(V6, V1, V4, V7); //Left Face
-	BuildQuad(V5, V6, V7, V8); //Back Face
-	BuildQuad(V4, V3, V8, V7); //Top Face
-	BuildQuad(V6, V5, V2, V1); //Bottom Face
-
-	FTransform* t = new FTransform(FRotator::ZeroRotator, position, scale);
-	FMatrix m = t->ToMatrixWithScale();
+	//Get the sign to know the direction of the movement
+	float xSign = FMath::Sign(StartHitPoint.X - StartCenter.X);
+	float ySign = FMath::Sign(StartHitPoint.Y - StartCenter.Y);
 
 	for (int32 i = 0; i < Vertices.Num(); i++)
 	{
-		//(Vertices[i] *= scale) + position;
-		Vertices[i] = m.TransformPosition(Vertices[i]);
-	}
+		FVector CurrMovementAmount = MovementAmount;
+		FVector CurrVertex = StartVertices[i];
 
-	TArray<FLinearColor> VertexColors;
-	VertexColors.Add(FLinearColor(0.f, 0.f, 1.f));
-	VertexColors.Add(FLinearColor(1.f, 0.f, 0.f));
-	VertexColors.Add(FLinearColor(1.f, 0.f, 0.f));
-	VertexColors.Add(FLinearColor(0.f, 1.f, 0.f));
-	VertexColors.Add(FLinearColor(0.5f, 1.f, 0.5f));
-	VertexColors.Add(FLinearColor(0.f, 1.f, 0.f));
-	VertexColors.Add(FLinearColor(1.f, 1.f, 0.f));
-	VertexColors.Add(FLinearColor(0.f, 1.f, 1.f));
-
-	GenerateMesh(VertexColors);
-
-	const int32 legCount = 4;
-
-	for (int32 i = 0; i < legCount; i++)
-	{
-		ATableLeg* leg = GetWorld()->SpawnActor<ATableLeg>(ATableLeg::StaticClass());
-
-		if (leg)
+		//Freeze the vertex location 
+		if (FMath::Sign(CurrVertex.X - StartCenter.X) != xSign)
 		{
-			leg->GenerateMesh(TArray<FLinearColor>());
-			Legs.Add(leg);
+			CurrMovementAmount.X = 0;
 		}
+
+		if (FMath::Sign(CurrVertex.Y - StartCenter.Y) != ySign)
+		{
+			CurrMovementAmount.Y = 0;
+		}
+
+		Vertices[i] = CurrVertex + FVector(CurrMovementAmount.X, CurrMovementAmount.Y, 0);
 	}
 
+	//Updating Mesh
+	Mesh->UpdateMeshSection_LinearColor(0, Vertices, TArray<FVector>(), TArray<FVector2D>(), TArray<FLinearColor>(), TArray<FProcMeshTangent>());
 }
 
+/**
+ * Updates the table's legs position according to table's bounds.
+ */
 void ATable::UpdateLegsTransform()
 {
-	FBox Bounds = Mesh->Bounds.GetBox();
-	int32 legWidth = Legs[0]->Width;
-	int32 legLength = Legs[0]->Length;
+	if (Legs.Num() == 0)
+	{
+		return;
+	}
 
-	Legs[0]->SetActorLocation(FVector(Bounds.Min.X, Bounds.Max.Y, Bounds.Min.Z));
-	Legs[1]->SetActorLocation(FVector(Bounds.Min.X, Bounds.Min.Y + legLength, Bounds.Min.Z));
-	Legs[2]->SetActorLocation(FVector(Bounds.Max.X - legWidth, Bounds.Max.Y, Bounds.Min.Z));
-	Legs[3]->SetActorLocation(FVector(Bounds.Max.X - legWidth, Bounds.Min.Y + legLength, Bounds.Min.Z));
+	const ATableLeg* Leg = Legs[0];
+	const FBox Bounds = Mesh->Bounds.GetBox();
+
+	TArray<FVector> LegsPositions = {
+		FVector(Bounds.Min.X, Bounds.Min.Y, Bounds.Min.Z - Leg->Height),
+		FVector(Bounds.Min.X, Bounds.Max.Y - Leg->Length, Bounds.Min.Z - Leg->Height),
+		FVector(Bounds.Max.X - Leg->Width, Bounds.Min.Y, Bounds.Min.Z - Leg->Height),
+		FVector(Bounds.Max.X - Leg->Width, Bounds.Max.Y - Leg->Length, Bounds.Min.Z - Leg->Height)
+	};
+
+	UpdateTransforms((TArray<AActor*>)Legs, LegsPositions);
+
 }
+
+/**
+ * Updates the resize points' position according to table's bounds.
+ */
+void ATable::UpdateResizePointsTransform()
+{
+	if (ResizePoints.Num() == 0)
+	{
+		return;
+	}
+
+	const FBox Bounds = Mesh->Bounds.GetBox();
+
+	TArray<FVector> ResizePointsPositions = {
+		FVector(Bounds.Min.X, Bounds.Min.Y, Bounds.Max.Z),
+		FVector(Bounds.Min.X, Bounds.Max.Y, Bounds.Max.Z),
+		FVector(Bounds.Max.X, Bounds.Min.Y, Bounds.Max.Z),
+		FVector(Bounds.Max.X, Bounds.Max.Y, Bounds.Max.Z)
+	};
+
+	UpdateTransforms((TArray<AActor*>)ResizePoints, ResizePointsPositions);
+}
+
+void ATable::UpdateTransforms(TArray<AActor*> ActorsToUpdate, const TArray<FVector> &NewPositions)
+{
+	if (ActorsToUpdate.Num() == NewPositions.Num())
+	{
+		for (int i = 0; i < NewPositions.Num(); i++)
+		{
+			FVector NewPosition = NewPositions[i];
+			ActorsToUpdate[i]->SetActorLocation(NewPosition);
+		}
+	}
+}
+
+void ATable::CalculateChairs()
+{
+
+}
+
+/**
+ * Casts a Raycast, if it hits a ResizePoint it sets the variables needed to calculate the movement.
+ */
+void ATable::StartRecordingMovement()
+{
+	FHitResult HitResult;
+	bool bHasHit = PlayerController->GetHitResultUnderCursor(ECC_Visibility, true, HitResult);
+
+	if (bHasHit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Start Recording"));
+
+		const AActor* ActorHit = HitResult.GetActor();
+		bool bIsResizePoint = ActorHit->IsA(AResizePoint::StaticClass());
+
+		if (bIsResizePoint)
+		{
+			bRecordingMovement = bIsResizePoint;
+
+			StartHitPoint = HitResult.ImpactPoint;
+			StartHitPoint.Z = ActorHit->GetActorLocation().Z; //Just for more accurate calculus
+
+			StartVertices = Vertices;
+			StartCenter = Mesh->Bounds.GetBox().GetCenter();
+
+			//FPlane plane = FPlane(StartHitPoint, FVector(0, 0, 1));
+			//DrawDebugSolidPlane(GetWorld(), plane, StartHitPoint, FVector2D(100, 100), FColor::Red, true);
+		}
+
+	}
+}
+
+/**
+ * Stops the mouse tracking and resets the start variables.
+ */
+void ATable::StopRecordingMovement()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Stop Recording"));
+
+	bRecordingMovement = false;
+	StartHitPoint = FVector::ZeroVector;
+	StartCenter = FVector::ZeroVector;
+	StartVertices.Empty();
+}
+

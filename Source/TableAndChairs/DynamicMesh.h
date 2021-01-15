@@ -27,8 +27,11 @@ public:
 
 	void GenerateMesh(TArray<FLinearColor> VertexColors);
 
+	//Unit amount on X-Axis
 	int32 Width = 0;
+	//Unit amount on Y-Axis
 	int32 Length = 0;
+	//Unit amount on Z-Axis
 	int32 Height = 0;
 
 protected:
@@ -49,6 +52,6 @@ protected:
 	int32 TrianglesCount = 0;
 	int32 TrianglesIndex = 0;
 
-
-	void BuildQuad(const FVector bottomLeft, const FVector bottomRight, const FVector topRight, const FVector topLeft);
+	void BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft);
+	void BuildCube(const FVector &FrontBottomLeft, const FVector &FrontBottomRight, const FVector &FrontTopRight, const FVector &FrontTopLeft, const FVector &BackBottomLeft, const FVector &BackBottomRight, const FVector &BackTopRight, const FVector &BackTopLeft);
 };

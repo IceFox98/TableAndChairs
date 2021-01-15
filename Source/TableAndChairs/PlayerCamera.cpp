@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "PlayerCamera.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraComponent.h"
@@ -14,6 +13,7 @@ APlayerCamera::APlayerCamera()
 
 void APlayerCamera::BeginPlay()
 {
+	Super::BeginPlay();
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
@@ -23,27 +23,26 @@ void APlayerCamera::BeginPlay()
 		PlayerController->bShowMouseCursor = true;
 		PlayerController->bEnableMouseOverEvents = true;
 		PlayerController->bEnableClickEvents = true;
-	}
 
-	if (PlayerController->InputComponent)
-	{
-		PlayerController->InputComponent->BindAxis("MoveForward", this, &APlayerCamera::MoveForward);
-		PlayerController->InputComponent->BindAxis("MoveRight", this, &APlayerCamera::MoveRight);
+		if (PlayerController->InputComponent)
+		{
+			PlayerController->InputComponent->BindAxis("MoveForward", this, &APlayerCamera::MoveForward);
+			PlayerController->InputComponent->BindAxis("MoveRight", this, &APlayerCamera::MoveRight);
+		}
 	}
 }
 
-void APlayerCamera::MoveForward(float inputAxis)
+void APlayerCamera::MoveForward(float InputAxis)
 {
-	FVector MovementAmount = FVector::ForwardVector * inputAxis * MovementSpeed;
+	const FVector MovementAmount = FVector::ForwardVector * InputAxis * MovementSpeed;
 
 	//Due to ignore the current rotation
 	SetActorLocation(GetActorLocation() + MovementAmount);
 }
 
-
-void APlayerCamera::MoveRight(float inputAxis)
+void APlayerCamera::MoveRight(float InputAxis)
 {
-	FVector MovementAmount = FVector::RightVector * inputAxis * MovementSpeed;
+	const FVector MovementAmount = FVector::RightVector * InputAxis * MovementSpeed;
 
 	AddActorLocalOffset(MovementAmount, true);
 }

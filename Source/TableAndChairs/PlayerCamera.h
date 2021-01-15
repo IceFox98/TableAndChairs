@@ -7,18 +7,16 @@
 #include "PlayerCamera.generated.h"
 
 /**
- *
+ * 
  */
 UCLASS()
 class TABLEANDCHAIRS_API APlayerCamera : public ACameraActor
 {
 	GENERATED_BODY()
 
-
 public:
 	APlayerCamera();
 
-protected:
 	virtual void BeginPlay() override;
 
 public:
@@ -28,7 +26,5 @@ public:
 
 	void MoveForward(float inputAxis);
 	void MoveRight(float inputAxis);
-
-
-
+	
 };

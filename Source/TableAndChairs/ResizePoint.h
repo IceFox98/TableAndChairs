@@ -3,35 +3,29 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/SceneComponent.h"
+#include "GameFramework/Actor.h"
 #include "ResizePoint.generated.h"
 
-class USphereComponent;
-
 UCLASS()
-class TABLEANDCHAIRS_API UResizePoint : public USceneComponent
+class TABLEANDCHAIRS_API AResizePoint : public AActor
 {
 	GENERATED_BODY()
-
+	
 public:	
-	// Sets default values for this component's properties
-	UResizePoint();
+	// Sets default values for this actor's properties
+	AResizePoint();
 
 protected:
-	// Called when the game starts
+	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
 	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	virtual void Tick(float DeltaTime) override;
 
 private:
-	/** DefaultPawn collision component */
-	UPROPERTY(Category = ResizePoint, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		USphereComponent* CollisionComponent;
 
 	/** The mesh associated with this Pawn. */
-	UPROPERTY(Category = ResizePoint, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Category = ResizePoint, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* MeshComponent;
 };
