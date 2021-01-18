@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "Table.h"
 #include "PlayerCamera.h"
+#include "Chair.h"
 
 
 void ATableAndChairsGameModeBase::BeginPlay()

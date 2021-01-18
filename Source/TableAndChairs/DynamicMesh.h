@@ -25,6 +25,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	TArray<FVector> Vertices;
 
+	/**
+	 * Calls the function of UPorceduralMesh class to generate the mesh.
+	 * @param VertexColors teeest test
+	 */
 	void GenerateMesh(TArray<FLinearColor> VertexColors);
 
 	//Unit amount on X-Axis
@@ -34,13 +38,13 @@ public:
 	//Unit amount on Z-Axis
 	int32 Height = 0;
 
-protected:
-
 	UPROPERTY(VisibleAnywhere)
 		USceneComponent* Root;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		UProceduralMeshComponent* Mesh;
+
+protected:
 
 	virtual void BuildMesh();
 

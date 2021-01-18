@@ -27,8 +27,13 @@ ATable::ATable()
 	Length = 200;
 	Height = 20;
 
-	ResizePointsCount = 4;
 	bRecordingMovement = false;
+
+	ChairsOnAxis.Add(EAxes::X, new TArray<AChair*>());
+	ChairsOnAxis.Add(EAxes::Y, new TArray<AChair*>());
+
+	ChairOffset = 15.f;
+	ChairWidth = 60.f + (ChairOffset * 2);
 }
 
 // Called when the game starts or when spawned
@@ -36,12 +41,20 @@ void ATable::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SpawnTableLegs();
+	SpawnResizePoints();
+
 	BuildMesh();
+	UpdateResizePointsTransform();
+	UpdateLegsTransform();
+	CalculateChairs();
 
-	//Generate Table's Legs
-	const int32 LegCount = 4;
+	SetupInputBinding();
+}
 
-	for (int32 i = 0; i < LegCount; i++)
+void ATable::SpawnTableLegs()
+{
+	for (int32 i = 0; i < LegsCount; i++)
 	{
 		ATableLeg* Leg = GetWorld()->SpawnActor<ATableLeg>(ATableLeg::StaticClass());
 
@@ -51,7 +64,10 @@ void ATable::BeginPlay()
 			Legs.Add(Leg);
 		}
 	}
+}
 
+void ATable::SpawnResizePoints()
+{
 	//Generate ResizePoints
 	for (int32 i = 0; i < ResizePointsCount; i++)
 	{
@@ -59,19 +75,23 @@ void ATable::BeginPlay()
 		ResizePointInstance->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 		ResizePoints.Add(ResizePointInstance);
 	}
+}
 
-	UpdateResizePointsTransform();
-	UpdateLegsTransform();
-
+void ATable::SetupInputBinding()
+{
 	PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
+	//Setup input binding
 	if (PlayerController && PlayerController->InputComponent)
 	{
 		PlayerController->InputComponent->BindAction("RecordMovement", IE_Pressed, this, &ATable::StartRecordingMovement);
 		PlayerController->InputComponent->BindAction("RecordMovement", IE_Released, this, &ATable::StopRecordingMovement);
 	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerController, or its InputComponent, is NULL"));
+	}
 }
-
 
 void ATable::BuildMesh()
 {
@@ -79,17 +99,19 @@ void ATable::BuildMesh()
 
 	//6 sides on cube, 4 verts each (corners)
 
-	FVector Scale = FVector(Width, Length, Height);
-	FVector Position = FVector(0, 0, 100 + Height);
+	const FVector Scale = FVector(Width, Length, Height);
+	const float LegHeight = GetTableLegSize().Z;
+	const FVector Position = FVector(0, 0, LegHeight + Height);
 
 	BuildCube(FVector(0, 0, 0), FVector(0, 1, 0), FVector(0, 1, 1), FVector(0, 0, 1), FVector(1, 1, 0), FVector(1, 0, 0), FVector(1, 0, 1), FVector(1, 1, 1));
 
-	FTransform* TableTransform = new FTransform(FRotator::ZeroRotator, Position, Scale);
-	FMatrix TableMatrix = TableTransform->ToMatrixWithScale();
+	//FTransform* TableTransform = new FTransform(FRotator::ZeroRotator, Position, Scale);
+	//FMatrix TableMatrix = TableTransform->ToMatrixWithScale();
 
 	for (int32 i = 0; i < Vertices.Num(); i++)
 	{
-		Vertices[i] = TableMatrix.TransformPosition(Vertices[i]);
+		//Vertices[i] = TableMatrix.TransformPosition(Vertices[i]);
+		Vertices[i] *= Scale;
 	}
 
 	TArray<FLinearColor> VertexColors;
@@ -103,7 +125,7 @@ void ATable::BuildMesh()
 	//VertexColors.Add(FLinearColor(0.f, 1.f, 1.f));
 
 	GenerateMesh(VertexColors);
-
+	SetActorLocation(Position);
 }
 
 // Called every frame
@@ -151,18 +173,15 @@ void ATable::Tick(float DeltaTime)
 		UpdateTableMesh(MovementAmount);
 		UpdateResizePointsTransform();
 		UpdateLegsTransform();
+		CalculateChairs();
 	}
 }
 
-/**
- * Updates the Mesh of the table according to the point hit by mouse.
- * @param MovementAmount - The total movement tracked by the mouse.
- */
 void ATable::UpdateTableMesh(const FVector &MovementAmount)
 {
 	//Get the sign to know the direction of the movement
-	float xSign = FMath::Sign(StartHitPoint.X - StartCenter.X);
-	float ySign = FMath::Sign(StartHitPoint.Y - StartCenter.Y);
+	float XSign = FMath::Sign(StartHitPoint.X - StartCenter.X);
+	float YSign = FMath::Sign(StartHitPoint.Y - StartCenter.Y);
 
 	for (int32 i = 0; i < Vertices.Num(); i++)
 	{
@@ -170,12 +189,12 @@ void ATable::UpdateTableMesh(const FVector &MovementAmount)
 		FVector CurrVertex = StartVertices[i];
 
 		//Freeze the vertex location 
-		if (FMath::Sign(CurrVertex.X - StartCenter.X) != xSign)
+		if (FMath::Sign(CurrVertex.X - StartCenter.X) != XSign)
 		{
 			CurrMovementAmount.X = 0;
 		}
 
-		if (FMath::Sign(CurrVertex.Y - StartCenter.Y) != ySign)
+		if (FMath::Sign(CurrVertex.Y - StartCenter.Y) != YSign)
 		{
 			CurrMovementAmount.Y = 0;
 		}
@@ -187,9 +206,7 @@ void ATable::UpdateTableMesh(const FVector &MovementAmount)
 	Mesh->UpdateMeshSection_LinearColor(0, Vertices, TArray<FVector>(), TArray<FVector2D>(), TArray<FLinearColor>(), TArray<FProcMeshTangent>());
 }
 
-/**
- * Updates the table's legs position according to table's bounds.
- */
+
 void ATable::UpdateLegsTransform()
 {
 	if (Legs.Num() == 0)
@@ -198,22 +215,18 @@ void ATable::UpdateLegsTransform()
 	}
 
 	const ATableLeg* Leg = Legs[0];
-	const FBox Bounds = Mesh->Bounds.GetBox();
+	const FBox TableBounds = Mesh->Bounds.GetBox();
 
 	TArray<FVector> LegsPositions = {
-		FVector(Bounds.Min.X, Bounds.Min.Y, Bounds.Min.Z - Leg->Height),
-		FVector(Bounds.Min.X, Bounds.Max.Y - Leg->Length, Bounds.Min.Z - Leg->Height),
-		FVector(Bounds.Max.X - Leg->Width, Bounds.Min.Y, Bounds.Min.Z - Leg->Height),
-		FVector(Bounds.Max.X - Leg->Width, Bounds.Max.Y - Leg->Length, Bounds.Min.Z - Leg->Height)
+		FVector(TableBounds.Min.X, TableBounds.Min.Y, TableBounds.Min.Z - Leg->Height),
+		FVector(TableBounds.Min.X, TableBounds.Max.Y - Leg->Length, TableBounds.Min.Z - Leg->Height),
+		FVector(TableBounds.Max.X - Leg->Width, TableBounds.Min.Y, TableBounds.Min.Z - Leg->Height),
+		FVector(TableBounds.Max.X - Leg->Width, TableBounds.Max.Y - Leg->Length, TableBounds.Min.Z - Leg->Height)
 	};
 
 	UpdateTransforms((TArray<AActor*>)Legs, LegsPositions);
-
 }
 
-/**
- * Updates the resize points' position according to table's bounds.
- */
 void ATable::UpdateResizePointsTransform()
 {
 	if (ResizePoints.Num() == 0)
@@ -221,13 +234,13 @@ void ATable::UpdateResizePointsTransform()
 		return;
 	}
 
-	const FBox Bounds = Mesh->Bounds.GetBox();
+	const FBox TableBounds = Mesh->Bounds.GetBox();
 
 	TArray<FVector> ResizePointsPositions = {
-		FVector(Bounds.Min.X, Bounds.Min.Y, Bounds.Max.Z),
-		FVector(Bounds.Min.X, Bounds.Max.Y, Bounds.Max.Z),
-		FVector(Bounds.Max.X, Bounds.Min.Y, Bounds.Max.Z),
-		FVector(Bounds.Max.X, Bounds.Max.Y, Bounds.Max.Z)
+		FVector(TableBounds.Min.X, TableBounds.Min.Y, TableBounds.Max.Z),
+		FVector(TableBounds.Min.X, TableBounds.Max.Y, TableBounds.Max.Z),
+		FVector(TableBounds.Max.X, TableBounds.Min.Y, TableBounds.Max.Z),
+		FVector(TableBounds.Max.X, TableBounds.Max.Y, TableBounds.Max.Z)
 	};
 
 	UpdateTransforms((TArray<AActor*>)ResizePoints, ResizePointsPositions);
@@ -235,19 +248,150 @@ void ATable::UpdateResizePointsTransform()
 
 void ATable::UpdateTransforms(TArray<AActor*> ActorsToUpdate, const TArray<FVector> &NewPositions)
 {
-	if (ActorsToUpdate.Num() == NewPositions.Num())
+	if (ActorsToUpdate.Num() != NewPositions.Num())
 	{
-		for (int i = 0; i < NewPositions.Num(); i++)
-		{
-			FVector NewPosition = NewPositions[i];
-			ActorsToUpdate[i]->SetActorLocation(NewPosition);
-		}
+		UE_LOG(LogTemp, Error, TEXT("Func UpdateTransforms(): First and second arrays must have the same number of elements! Actors' transform will not be updated."));
+		return;
 	}
+
+	for (int i = 0; i < NewPositions.Num(); i++)
+	{
+		FVector NewPosition = NewPositions[i];
+		ActorsToUpdate[i]->SetActorLocation(NewPosition);
+	}
+}
+
+FVector ATable::GetTableLegSize() const
+{
+	if (Legs.Num() == 0)
+	{
+		return FVector::ZeroVector;
+	}
+
+	const ATableLeg* Leg = Legs[0];
+	return Leg->Mesh->Bounds.GetBox().GetSize();
 }
 
 void ATable::CalculateChairs()
 {
+	const FBox Bounds = Mesh->Bounds.GetBox();
+	const FVector TableSize = Bounds.GetSize();
 
+	const FVector TableLegSize = GetTableLegSize();
+
+	const int32 ChairsPerSideX = FMath::FloorToInt((TableSize.X - 60.f) / ChairWidth);
+	const int32 ChairsPerSideY = FMath::FloorToInt((TableSize.Y - 60.f) / ChairWidth);
+
+	//VERTICAL SIDES - Top and Bottom - Need to flip X-Axis
+	float TotalChairLength = GetTotalChairLength(ChairsPerSideY, TableSize.Y - 60.f);
+
+	FVector StartSpawnPoint = FVector(Bounds.GetCenter().X - DistanceFromTable, Bounds.Max.Y - TableLegSize.Y, Bounds.Min.Z); // Starting from right-center of table
+	FVector SpawnOffset = FVector((TableSize.X  * .5f) + DistanceFromTable, (-TotalChairLength * .5f), 0);
+
+	CalculateChairsOfAxis(StartSpawnPoint, SpawnOffset, ChairsPerSideY, TotalChairLength, EAxes::X);
+
+	//HORIZONTAL SIDES - Right and Left - Need to flip Y-Axis
+	TotalChairLength = GetTotalChairLength(ChairsPerSideX, TableSize.X - 60.f);
+
+	StartSpawnPoint = FVector(Bounds.Max.X - TableLegSize.X, Bounds.GetCenter().Y - DistanceFromTable, Bounds.Min.Z); // Starting from top-center of table
+	SpawnOffset = FVector((-TotalChairLength * .5f), (TableSize.Y  * .5f) + DistanceFromTable, 0);
+
+	CalculateChairsOfAxis(StartSpawnPoint, SpawnOffset, ChairsPerSideX, TotalChairLength, EAxes::Y);
+}
+
+float ATable::GetTotalChairLength(const int ChairsPerSide, const float TableSideLength) const
+{
+	if (ChairsPerSide == 0) //Can't divide by 0
+	{
+		return 0;
+	}
+
+	float TotalChairsLength = ChairsPerSide * ChairWidth;
+	float AdditionalChairOffset = (TableSideLength - TotalChairsLength) / ChairsPerSide;
+
+	return ChairWidth + AdditionalChairOffset;
+}
+
+void ATable::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector SpawnOffset, const int ChairsPerSide, const float TotalChairLength, const EAxes FlipAxis)
+{
+	float InitialRotation = Mesh->GetRelativeRotation().Yaw;
+
+	if (FlipAxis == EAxes::X)
+	{
+		InitialRotation -= 90.f;
+	}
+
+	TArray<AChair*> &CurrChairs = *ChairsOnAxis[FlipAxis];
+	const int32 ChairsCount = CurrChairs.Num();
+
+	if (ChairsCount * .5f < ChairsPerSide) //Adding
+	{
+		const int32 ChairsToAdd = ChairsPerSide - (ChairsCount * .5f);
+		for (int32 k = 0; k < ChairsToAdd; k++)
+		{
+			GenerateChairsFromPoint(StartSpawnPoint, InitialRotation, FlipAxis);
+		}
+	}
+	else if (ChairsCount * .5f > ChairsPerSide) //Deleting
+	{
+		CurrChairs[0]->Destroy();
+		CurrChairs[1]->Destroy();
+		CurrChairs.RemoveAt(0, 2);
+	}
+
+	int32 i = 0;
+	while (i < CurrChairs.Num() - 1) //Updating
+	{
+		AChair* ChairToUpdate = CurrChairs[i++];
+		FixCharirTransform(*ChairToUpdate, StartSpawnPoint, SpawnOffset, InitialRotation, EAxes::None);
+
+		ChairToUpdate = CurrChairs[i++];
+		FixCharirTransform(*ChairToUpdate, StartSpawnPoint, SpawnOffset, InitialRotation + 180.f, FlipAxis);
+
+		if (FlipAxis == EAxes::Y)
+		{
+			StartSpawnPoint.X -= TotalChairLength;
+		}
+		else if (FlipAxis == EAxes::X)
+		{
+			StartSpawnPoint.Y -= TotalChairLength;
+		}
+	}
+}
+
+void ATable::GenerateChairsFromPoint(const FVector &StartSpawnPoint, float InitialRotation, const EAxes FlipAxis)
+{
+	AChair* ChairSpawned = GetWorld()->SpawnActor<AChair>(AChair::StaticClass());
+	if (!ChairSpawned)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to spawn chair!"));
+		return;
+	}
+
+	//FixCharirTransform(*ChairSpawned, StartSpawnPoint, InitialRotation, EAxes::None);
+	ChairsOnAxis[FlipAxis]->Add(ChairSpawned);
+	ChairSpawned = nullptr;
+
+	ChairSpawned = GetWorld()->SpawnActor<AChair>(AChair::StaticClass());
+	//FixCharirTransform(*ChairSpawned, StartSpawnPoint, InitialRotation + 180.f, FlipAxis);
+	ChairsOnAxis[FlipAxis]->Add(ChairSpawned);
+
+}
+
+void ATable::FixCharirTransform(AChair &Chair, FVector StartSpawnPoint, FVector SpawnOffset, float Yaw, const EAxes FlipAxis)
+{
+	if (FlipAxis == EAxes::Y)
+	{
+		SpawnOffset.Y *= -1;
+	}
+	if (FlipAxis == EAxes::X)
+	{
+		SpawnOffset.X *= -1;
+	}
+
+	const FVector NewLocation = StartSpawnPoint + SpawnOffset;
+	Chair.SetActorLocation(NewLocation);
+	Chair.SetActorRotation(FRotator(0, Yaw, 0));
 }
 
 /**
