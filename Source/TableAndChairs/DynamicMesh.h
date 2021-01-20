@@ -23,20 +23,13 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	TArray<FVector> Vertices;
+
 
 	/**
 	 * Calls the function of UPorceduralMesh class to generate the mesh.
 	 * @param VertexColors teeest test
 	 */
-	void GenerateMesh(TArray<FLinearColor> VertexColors);
-
-	//Unit amount on X-Axis
-	int32 Width = 0;
-	//Unit amount on Y-Axis
-	int32 Length = 0;
-	//Unit amount on Z-Axis
-	int32 Height = 0;
+	void GenerateMesh(TArray<FColor> InVertexColors);
 
 	UPROPERTY(VisibleAnywhere)
 		USceneComponent* Root;
@@ -44,18 +37,42 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		UProceduralMeshComponent* Mesh;
 
+	UPROPERTY(EditDefaultsOnly)
+		UMaterial* Material;
+
 protected:
 
 	virtual void BuildMesh();
 
+	void UpdateMesh();
+
+	/** The vertices of this mesh */
+	TArray<FVector> Vertices;
+
+	/** The triangles of this mesh */
 	TArray<int32> Triangles;
 
-	int32 VertexCount = 0;
-	int32 VertexIndex = 0;
+	/** The normals of this mesh */
+	TArray<FVector> Normals;
 
-	int32 TrianglesCount = 0;
-	int32 TrianglesIndex = 0;
+	/** The number of Vertices of the mesh, must be calculated */
+	int32 VertexCount;
 
-	void BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft);
-	void BuildCube(const FVector &FrontBottomLeft, const FVector &FrontBottomRight, const FVector &FrontTopRight, const FVector &FrontTopLeft, const FVector &BackBottomLeft, const FVector &BackBottomRight, const FVector &BackTopRight, const FVector &BackTopLeft);
+	/** The number of Triangles of the mesh, must be calculated */
+	int32 TrianglesCount;
+
+	void BuildCube(FVector MeshSize, FVector Position);
+
+private:
+
+	void BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &Normals);
+
+	/** The current index of Vertices array */
+	int32 VertexIndex;
+
+	/** The current index of Triangles array */
+	int32 TrianglesIndex;
+
+	TArray<FColor> VertexColors;
+
 };

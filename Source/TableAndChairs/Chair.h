@@ -16,6 +16,10 @@ class TABLEANDCHAIRS_API AChair : public ADynamicMesh
 
 public:
 	AChair();
+
+	FVector SeatSize = FVector(60.f, 60.f, 10.f);
+	FVector BackSize = FVector(60.f, 15.f, 80.f);
+	FVector LegSize = FVector(15.f, 15.f, 70.f);
 	
 protected:
 

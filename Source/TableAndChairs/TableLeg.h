@@ -18,15 +18,14 @@ public:
 
 	ATableLeg();
 
+	UPROPERTY(EditDefaultsOnly)
+		FVector Size = FVector(30.f, 30.f, 100.f);
+
 protected:
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void BuildMesh() override;
-
-public:
-
-	AActor* ResizePoint;
 	
 };

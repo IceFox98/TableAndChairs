@@ -28,21 +28,52 @@ void APlayerCamera::BeginPlay()
 		{
 			PlayerController->InputComponent->BindAxis("MoveForward", this, &APlayerCamera::MoveForward);
 			PlayerController->InputComponent->BindAxis("MoveRight", this, &APlayerCamera::MoveRight);
+			PlayerController->InputComponent->BindAxis("Rotate", this, &APlayerCamera::Rotate);
 		}
 	}
 }
 
 void APlayerCamera::MoveForward(float InputAxis)
 {
-	const FVector MovementAmount = FVector::ForwardVector * InputAxis * MovementSpeed;
+	if (InputAxis == 0)
+	{
+		return;
+	}
 
-	//Due to ignore the current rotation
-	SetActorLocation(GetActorLocation() + MovementAmount);
+	FVector CameraLocation = GetActorLocation();
+
+	FVector NewLocation = CameraLocation + (GetActorForwardVector() * InputAxis * MovementSpeed * GetWorld()->DeltaTimeSeconds);
+	NewLocation.Z = CameraLocation.Z;
+
+	SetActorLocation(NewLocation);
 }
 
 void APlayerCamera::MoveRight(float InputAxis)
 {
-	const FVector MovementAmount = FVector::RightVector * InputAxis * MovementSpeed;
+	if (InputAxis == 0)
+	{
+		return;
+	}
 
-	AddActorLocalOffset(MovementAmount, true);
+	FVector CameraLocation = GetActorLocation();
+
+	FVector NewLocation = CameraLocation + (GetActorRightVector() * InputAxis * MovementSpeed * GetWorld()->DeltaTimeSeconds);
+	NewLocation.Z = CameraLocation.Z;
+
+	SetActorLocation(NewLocation);
+}
+
+void APlayerCamera::Rotate(float InputAxis)
+{
+	if (InputAxis == 0)
+	{
+		return;
+	}
+
+	FRotator CameraRotation = GetActorRotation();
+
+	float RotateAmount = InputAxis * RotateSpeed * GetWorld()->DeltaTimeSeconds;
+	CameraRotation.Yaw += RotateAmount;
+
+	SetActorRotation(CameraRotation);
 }

@@ -6,8 +6,10 @@
 #include "GameFramework/GameModeBase.h"
 #include "TableAndChairsGameModeBase.generated.h"
 
+class ADynamicMesh;
+
 /**
- * 
+ *
  */
 UCLASS()
 class TABLEANDCHAIRS_API ATableAndChairsGameModeBase : public AGameModeBase
@@ -19,4 +21,6 @@ protected:
 
 	void SpawnMesh();
 
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<ADynamicMesh> MeshToSpawn;
 };

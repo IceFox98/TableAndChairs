@@ -22,9 +22,13 @@ public:
 public:
 
 	UPROPERTY(Category = CameraMovement, EditAnywhere)
-		float MovementSpeed = 10.0f;
+		float MovementSpeed = 1500.0f;
 
-	void MoveForward(float inputAxis);
-	void MoveRight(float inputAxis);
+	UPROPERTY(Category = CameraMovement, EditAnywhere)
+		float RotateSpeed = 70.0f;
+
+	void MoveForward(float InputAxis);
+	void MoveRight(float InputAxis);
 	
+	void Rotate(float InputAxis);
 };

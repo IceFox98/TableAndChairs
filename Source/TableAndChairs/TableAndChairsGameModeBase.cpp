@@ -4,8 +4,6 @@
 #include "TableAndChairsGameModeBase.h"
 #include "GameFramework/Actor.h"
 #include "Table.h"
-#include "PlayerCamera.h"
-#include "Chair.h"
 
 
 void ATableAndChairsGameModeBase::BeginPlay()
@@ -20,11 +18,18 @@ void ATableAndChairsGameModeBase::SpawnMesh()
 	//Pointer cannot be reassigned, but World can still be modified
 	UWorld* const World = GetWorld();
 
-	if (World)
+	if (!World)
 	{
-		World->SpawnActor<ADynamicMesh>(ATable::StaticClass());
+		UE_LOG(LogTemp, Error, TEXT("World is NULL!"));
+		return;
 	}
 
+	if (!MeshToSpawn)
+	{
+		UE_LOG(LogTemp, Error, TEXT("MeshToSpawn is NULL!"));
+		return;
+	}
 
+	World->SpawnActor<ADynamicMesh>(MeshToSpawn);
 }
 
