@@ -51,21 +51,19 @@ protected:
 
 	virtual void BuildMesh() override;
 
-public:
-
-	UPROPERTY(EditDefaultsOnly)
-		FVector Size = FVector(200.f, 200.f, 20.f);
+	UPROPERTY(VisibleAnywhere)
+		FVector Size;
 
 private:
 
 	UPROPERTY()
-		int32 LegsCount = 4;
+		int32 LegsCount;
 
 	UPROPERTY(VisibleAnywhere)
 		TArray<ATableLeg*> Legs;
 
 	UPROPERTY()
-		int32 ResizePointsCount = 4;
+		int32 ResizePointsCount;
 
 	UPROPERTY(VisibleAnywhere)
 		TArray<AResizePoint*> ResizePoints;
@@ -74,9 +72,19 @@ private:
 	UPROPERTY(VisibleAnywhere)
 		TMap<EAxes, FChairs> ChairsOnAxis;
 
+	/** The blueprint of TableLeg */
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<ATableLeg> TableLegClass;
+
+	/** The blueprint of Chair */
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<AChair> ChairClass;
+
+	/**  */
 	APlayerController* PlayerController;
 
-	bool bRecordingMovement = false;
+	/** Are you actually resizing the table? */
+	bool bRecordingMovement;
 
 	FVector StartHitPoint;
 	FVector StartCenter;
@@ -85,11 +93,11 @@ private:
 
 	/** How far chair is from the side of the table */
 	UPROPERTY(EditDefaultsOnly, Category = "Chair Info", meta = (AllowPrivateAccess = "true"))
-		float DistanceFromTable = .25f;
+		float DistanceFromTable;
 
 	/** The offset for each chair's side */
 	UPROPERTY(EditDefaultsOnly, Category = "Chair Info", meta = (AllowPrivateAccess = "true"))
-		float ChairOffset = 15.f;
+		float ChairOffset;
 
 	/** Chair width + ChairOffset for each side */
 	float ChairWidthWithOffset;
@@ -100,16 +108,16 @@ private:
 	/** Generates Resize Points and attaches them as children of Table actor */
 	void SpawnResizePoints();
 
-	/**  */
+	/** Generates Table Legs and attaches them as children of Table actor */
 	void SpawnTableLegs();
 
-	/**  */
+	/** Binds the functions for the InputComponent of the PlayerController  */
 	void SetupInputBinding();
 
-	/**  */
+	/** Casts a Raycast, if it hits a ResizePoint it sets the variables needed to calculate the movement. */
 	void StartRecordingMovement();
 
-	/**  */
+	/** Stops the mouse tracking and resets the start variables. */
 	void StopRecordingMovement();
 
 	/**
@@ -129,12 +137,6 @@ private:
 	 * location with the relative position. Actors[0] location will be set to Positions[0].
 	 */
 	void UpdateTransforms(TArray<AActor*> ActorsToUpdate, const TArray<FVector> &NewPositions);
-
-	/** Returns the size of the table leg */
-	FVector GetTableLegSize() const;
-
-	/** Returns the size of the seat of the chair */
-	FVector GetChairSeatSize() const;
 
 	/** Calculates the number of chairs for each table's side and generates/removes/updates them. */
 	void CalculateChairs();
@@ -159,7 +161,7 @@ private:
 
 	/**
 	 * Spawns one chairs for each side of table (only the opposite ones)
-	 * @param FlipAxis -
+	 * @param FlipAxis - test
 	 */
 	void SpawnChairs(const EAxes FlipAxis);
 

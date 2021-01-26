@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "TableAndChairsGameModeBase.h"
 #include "DynamicMesh.generated.h"
 
 UCLASS()
@@ -24,12 +26,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-
 	/**
 	 * Calls the function of UPorceduralMesh class to generate the mesh.
-	 * @param VertexColors teeest test
 	 */
-	void GenerateMesh(TArray<FColor> InVertexColors);
+	void GenerateMesh();
 
 	UPROPERTY(VisibleAnywhere)
 		USceneComponent* Root;
@@ -42,30 +42,29 @@ public:
 
 protected:
 
-	virtual void BuildMesh();
+	ATableAndChairsGameModeBase* GameMode;
 
-	void UpdateMesh();
-
-	/** The vertices of this mesh */
+	/** The Vertices of this mesh */
 	TArray<FVector> Vertices;
 
-	/** The triangles of this mesh */
-	TArray<int32> Triangles;
+	virtual void BuildMesh();
 
-	/** The normals of this mesh */
-	TArray<FVector> Normals;
+	/** Updates the first section of this mesh, using the values of member variables */
+	void UpdateMesh();
 
-	/** The number of Vertices of the mesh, must be calculated */
-	int32 VertexCount;
+	/**
+	 * Adds the Vertices, Triangles and Normals necessary to create the mesh
+	 * @param MeshSize - The size of the Cube
+	 * @param Position - Where the mesh will be positioned. NOTE: Its starting pivot will be always (0, 0, 0)
+	 */
+	void BuildCube(const FVector &MeshSize, const FVector &Position, const FColor &Color);
 
-	/** The number of Triangles of the mesh, must be calculated */
-	int32 TrianglesCount;
-
-	void BuildCube(FVector MeshSize, FVector Position);
+	/** Removes all sections of this Mesh and resets Vertices, Triangles, Normals, ... */
+	void ResetBuffers();
 
 private:
 
-	void BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &Normals);
+	void BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &Normals, const FColor &Color);
 
 	/** The current index of Vertices array */
 	int32 VertexIndex;
@@ -73,6 +72,19 @@ private:
 	/** The current index of Triangles array */
 	int32 TrianglesIndex;
 
+	/** The Triangles of this mesh */
+	TArray<int32> Triangles;
+
+	/** The Normals of this mesh */
+	TArray<FVector> Normals;
+
+	/** The Tangents of this mesh */
+	TArray<FVector> Tangents;
+
+	/** The UVs of this mesh */
+	TArray<FVector2D> UVs;
+
+	/** The VertexColors of this mesh */
 	TArray<FColor> VertexColors;
 
 };

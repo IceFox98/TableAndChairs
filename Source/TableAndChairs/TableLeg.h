@@ -18,9 +18,6 @@ public:
 
 	ATableLeg();
 
-	UPROPERTY(EditDefaultsOnly)
-		FVector Size = FVector(30.f, 30.f, 100.f);
-
 protected:
 
 	// Called when the game starts or when spawned
@@ -28,4 +25,6 @@ protected:
 
 	virtual void BuildMesh() override;
 	
+	UPROPERTY(VisibleAnywhere)
+		FVector Size;
 };

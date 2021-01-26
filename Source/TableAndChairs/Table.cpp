@@ -6,8 +6,6 @@
 #include "TableLeg.h"
 #include "ResizePoint.h"
 #include "GameFramework/PlayerController.h"
-#include "Kismet/GameplayStatics.h"
-//#include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "Math/UnrealMathUtility.h"
 
@@ -17,26 +15,40 @@ ATable::ATable()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	VertexCount = (6 * 4); //6 faces with 4 vertices each
-	Vertices.AddUninitialized(VertexCount);
-	Normals.AddUninitialized(VertexCount);
-
-	TrianglesCount = (6 * 2 * 3); //2 triangles per face, 3 vertices each
-	Triangles.AddUninitialized(TrianglesCount);
-
 	ChairsOnAxis.Add(EAxes::X);
 	ChairsOnAxis.Add(EAxes::Y);
 
-	FVector ChairSeatSize = GetChairSeatSize();
-	ChairWidthWithOffset = ChairSeatSize.X + (ChairOffset * 2);
+	LegsCount = 4;
+	ResizePointsCount = 4;
 
-	ChairOffsetZ = (Size.Z * .5f) + 15.f; //TODO: 15 è temporaneo, andrebbe calcolata l'altezza della gamba della sedia + quella del sedile e sottrarla all'altezza della gamba del tavolo
+	bRecordingMovement = false;
+	DistanceFromTable = .25f;
+	ChairOffset = 15.f;
 }
 
 // Called when the game starts or when spawned
 void ATable::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (GameMode)
+	{
+		//Calculating the right value of ChairOffsetZ 
+		Size = GameMode->TableSize;
+
+		FVector ChairSeatSize = GameMode->ChairSeatSize;
+		ChairWidthWithOffset = ChairSeatSize.X + (ChairOffset * 2);
+
+		float ChairLegSeatHeight = ChairSeatSize.Z + GameMode->ChairLegSize.Z;
+
+		ChairOffsetZ = (ChairSeatSize.Z * .5f) + (GameMode->TableLegSize.Z - ChairLegSeatHeight);
+		//ChairOffsetZ = 0;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("GameMode is NULL"));
+		return;
+	}
 
 	SpawnTableLegs();
 	SpawnResizePoints();
@@ -51,9 +63,15 @@ void ATable::BeginPlay()
 
 void ATable::SpawnTableLegs()
 {
+	if (!TableLegClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("TableLegClass is NULL. Unable to spawn the table legs!"));
+		return;
+	}
+
 	for (int32 i = 0; i < LegsCount; i++)
 	{
-		ATableLeg* LegInstance = GetWorld()->SpawnActor<ATableLeg>(ATableLeg::StaticClass());
+		ATableLeg* LegInstance = GetWorld()->SpawnActor<ATableLeg>(TableLegClass);
 
 		if (LegInstance)
 		{
@@ -98,25 +116,16 @@ void ATable::BuildMesh()
 {
 	Super::BuildMesh();
 
-	//6 sides on cube, 4 verts each (corners)
-
-	const float LegHeight = GetTableLegSize().Z;
+	const float LegHeight = GameMode->TableLegSize.Z;
 	const FVector Position = FVector(0, 0, LegHeight + (Size.Z * .5f));
 
-	BuildCube(Size, FVector::ZeroVector);
+	BuildCube(Size, FVector::ZeroVector, FColor::Red);
 
 	//FTransform* TableTransform = new FTransform(FRotator::ZeroRotator, Position, Scale);
 	//FMatrix TableMatrix = TableTransform->ToMatrixWithScale();
-		//Vertices[i] = TableMatrix.TransformPosition(Vertices[i]);
+	//Vertices[i] = TableMatrix.TransformPosition(Vertices[i]);
 
-	TArray<FColor> InVertexColors;
-
-	for (int32 i = 0; i < Vertices.Num(); i++)
-	{
-		InVertexColors.Add(FColor::Red);
-	}
-
-	GenerateMesh(InVertexColors);
+	GenerateMesh();
 	SetActorLocation(Position);
 }
 
@@ -141,6 +150,11 @@ void ATable::Tick(float DeltaTime)
 		FHitResult HitResult;
 		PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, HitResult);
 
+		if (HitResult.ImpactPoint == FVector::ZeroVector)
+		{
+			return;
+		}
+
 		//Create a plane at ResizePoint position, and get the point where raycast intersect it, due to get the correct amount of movement
 		FVector IntersectionPoint;
 		FPlane Plane = FPlane(StartHitPoint, FVector(0, 0, 1));
@@ -155,6 +169,7 @@ void ATable::Tick(float DeltaTime)
 		}
 		else
 		{
+			//Something went wrong
 			UE_LOG(LogTemp, Warning, TEXT("NO INTERSECT"));
 			StopRecordingMovement();
 			return;
@@ -196,9 +211,7 @@ void ATable::UpdateTableMesh(const FVector &MovementAmount)
 
 	//Updating Mesh
 	UpdateMesh();
-	//Mesh->UpdateMeshSection_LinearColor(0, Vertices, TArray<FVector>(), TArray<FVector2D>(), TArray<FLinearColor>(), TArray<FProcMeshTangent>());
 }
-
 
 void ATable::UpdateLegsTransform()
 {
@@ -207,7 +220,7 @@ void ATable::UpdateLegsTransform()
 		return;
 	}
 
-	const FVector LegSize = Legs[0]->Size;
+	const FVector LegSize = GameMode->TableLegSize;
 	const FBox TableBounds = Mesh->Bounds.GetBox();
 
 	const float ZPosition = TableBounds.Min.Z - (LegSize.Z * .5f);
@@ -256,32 +269,13 @@ void ATable::UpdateTransforms(TArray<AActor*> ActorsToUpdate, const TArray<FVect
 	}
 }
 
-FVector ATable::GetTableLegSize() const
-{
-	if (Legs.Num() == 0)
-	{
-		return FVector::ZeroVector;
-	}
-
-	const ATableLeg* Leg = Legs[0];
-	return Leg->Size;
-}
-
-FVector ATable::GetChairSeatSize() const
-{
-	//TODO: Not best way (?)
-	AChair* Chair = NewObject<AChair>(AChair::StaticClass());
-	return Chair->SeatSize;
-}
-
 void ATable::CalculateChairs()
 {
 	//const FBox Bounds = Mesh->bounds
 	const FBox Bounds = Mesh->Bounds.GetBox();
 	const FVector TableSize = Bounds.GetSize();
 
-	const FVector TableLegSize = GetTableLegSize();
-	//const float ChairSeatWidth = GetChairSeatSize().X;
+	const FVector TableLegSize = GameMode->TableLegSize;
 
 	const float TableSizeAvailableX = TableSize.X - (TableLegSize.X * 2);
 	const float TableSizeAvailableY = TableSize.Y - (TableLegSize.Y * 2);
@@ -322,12 +316,11 @@ float ATable::GetTotalChairLength(const int ChairsPerSide, const float TableSide
 void ATable::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector SpawnOffset, const int ChairsPerSide, const float TotalChairLength, const EAxes FlipAxis)
 {
 	//Get the rotation of the table
-	//TODO: Maybe use GetActorLocation()?
-	//float InitialRotation = Mesh->GetRelativeRotation().Yaw;
 	float InitialRotation = GetActorRotation().Yaw;
 
 	if (FlipAxis == EAxes::X)
 	{
+		//Initial rotation for vertical sides
 		InitialRotation -= 90.f;
 	}
 
@@ -358,6 +351,8 @@ void ATable::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector SpawnOffset,
 		ChairToUpdate = CurrChairs[i++];
 		FixChairTransform(*ChairToUpdate, StartSpawnPoint, SpawnOffset, InitialRotation + 180.f, FlipAxis);
 
+		//Updating spawn point position
+		//If flip Axis is Y, then you're updating chairs on X Axis
 		if (FlipAxis == EAxes::Y)
 		{
 			StartSpawnPoint.X -= TotalChairLength;
@@ -371,18 +366,23 @@ void ATable::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector SpawnOffset,
 
 void ATable::SpawnChairs(const EAxes FlipAxis)
 {
-	AChair* ChairSpawned = GetWorld()->SpawnActor<AChair>(AChair::StaticClass());
+	if (!ChairClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ChairClass is NULL. Unable to spawn the chair!"));
+		return;
+	}
+
+	AChair* ChairSpawned = GetWorld()->SpawnActor<AChair>(ChairClass);
 	if (!ChairSpawned)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to spawn chair!"));
+		UE_LOG(LogTemp, Error, TEXT("Failed to spawn the chair!"));
 		return;
 	}
 
 	ChairsOnAxis[FlipAxis].Chairs.Add(ChairSpawned);
-	//ChairsOnAxis[FlipAxis].Chairs->Add(ChairSpawned);
 	//ChairSpawned = nullptr;
 
-	ChairSpawned = GetWorld()->SpawnActor<AChair>(AChair::StaticClass());
+	ChairSpawned = GetWorld()->SpawnActor<AChair>(ChairClass);
 	ChairsOnAxis[FlipAxis].Chairs.Add(ChairSpawned);
 
 }
@@ -398,14 +398,12 @@ void ATable::FixChairTransform(AChair &Chair, FVector StartSpawnPoint, FVector S
 		SpawnOffset.X *= -1;
 	}
 
+	//Set Transform
 	const FVector NewLocation = StartSpawnPoint + SpawnOffset;
 	Chair.SetActorLocation(NewLocation);
 	Chair.SetActorRotation(FRotator(0, Yaw, 0));
 }
 
-/**
- * Casts a Raycast, if it hits a ResizePoint it sets the variables needed to calculate the movement.
- */
 void ATable::StartRecordingMovement()
 {
 	FHitResult HitResult;
@@ -418,6 +416,7 @@ void ATable::StartRecordingMovement()
 		const AActor* ActorHit = HitResult.GetActor();
 		bool bIsResizePoint = ActorHit->IsA(AResizePoint::StaticClass());
 
+		//Is the hit Resize Point attached to this table actor? Just for manage multiple instances of table
 		bool bIsVaild = ActorHit->IsAttachedTo(this);
 
 		if (bIsResizePoint && bIsVaild)
@@ -434,13 +433,9 @@ void ATable::StartRecordingMovement()
 			//FPlane plane = FPlane(StartHitPoint, FVector(0, 0, 1));
 			//DrawDebugSolidPlane(GetWorld(), plane, StartHitPoint, FVector2D(100, 100), FColor::Red, true);
 		}
-
 	}
 }
 
-/**
- * Stops the mouse tracking and resets the start variables.
- */
 void ATable::StopRecordingMovement()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Stop Recording"));

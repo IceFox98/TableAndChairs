@@ -4,17 +4,17 @@
 
 ATableLeg::ATableLeg()
 {
-	VertexCount = (6 * 4); //6 faces with 4 vertices each
-	Vertices.AddUninitialized(VertexCount);
-	Normals.AddUninitialized(VertexCount);
-
-	TrianglesCount = (6 * 2 * 3); //6 faces per cube, 2 triangles per face, 3 vertices each
-	Triangles.AddUninitialized(TrianglesCount);
+	PrimaryActorTick.bCanEverTick = false;
 }
 
 void ATableLeg::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (GameMode)
+	{
+		Size = GameMode->TableLegSize;
+	}
 
 	BuildMesh();
 }
@@ -23,7 +23,7 @@ void ATableLeg::BuildMesh()
 {
 	Super::BuildMesh();
 
-	BuildCube(Size, FVector::ZeroVector);
+	BuildCube(Size, FVector::ZeroVector, FColor::Black);
 
-	GenerateMesh(TArray<FColor>());
+	GenerateMesh();
 }
