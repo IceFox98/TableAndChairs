@@ -12,7 +12,7 @@ AResizePoint::AResizePoint()
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'"));
 	MeshComponent->SetStaticMesh(SphereMeshAsset.Object);
-	MeshComponent->SetRelativeScale3D(FVector(0.2, 0.2, 0.2));
+	MeshComponent->SetRelativeScale3D(FVector(0.3, 0.3, 0.3));
 
 	SetRootComponent(MeshComponent);
 }

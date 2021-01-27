@@ -19,13 +19,14 @@ class TABLEANDCHAIRS_API ATableAndChairsGameModeBase : public AGameModeBase
 protected:
 	virtual void BeginPlay() override;
 
+	/** Spawns a DynamicMesh at Zero position */
 	void SpawnMesh();
-
-	UPROPERTY(EditDefaultsOnly)
-		TSubclassOf<ADynamicMesh> MeshToSpawn;
 
 public:
 	
+	UPROPERTY(EditDefaultsOnly)
+		TSubclassOf<ADynamicMesh> MeshToSpawn;
+
 	UPROPERTY(EditDefaultsOnly)
 		FVector TableSize = FVector(200.f, 200.f, 20.f);
 

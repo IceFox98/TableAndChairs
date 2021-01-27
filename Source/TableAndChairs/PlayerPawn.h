@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/DefaultPawn.h"
+#include "TableAndChairsGameModeBase.h"
 #include "PlayerPawn.generated.h"
 
 class UCameraComponent;
@@ -20,7 +21,13 @@ public:
 
 protected:
 
+	virtual void BeginPlay() override;
+
 	virtual void SetupPlayerInputComponent(UInputComponent* InInputComponent) override;
+
+	APlayerController* PlayerController;
+
+	ATableAndChairsGameModeBase* GameMode;
 
 private:
 
@@ -43,4 +50,7 @@ private:
 
 	/** Increases/Decreases the length of the Spring Arm */
 	void Zoom(float InputAxis);
+
+	/** Generates a new Table only if there's enough available space */
+	void SpawnNewMesh();
 };

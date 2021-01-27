@@ -36,13 +36,11 @@ void ATable::BeginPlay()
 		//Calculating the right value of ChairOffsetZ 
 		Size = GameMode->TableSize;
 
-		FVector ChairSeatSize = GameMode->ChairSeatSize;
+		const FVector ChairSeatSize = GameMode->ChairSeatSize;
 		ChairWidthWithOffset = ChairSeatSize.X + (ChairOffset * 2);
 
-		float ChairLegSeatHeight = ChairSeatSize.Z + GameMode->ChairLegSize.Z;
-
+		const float ChairLegSeatHeight = ChairSeatSize.Z + GameMode->ChairLegSize.Z;
 		ChairOffsetZ = (ChairSeatSize.Z * .5f) + (GameMode->TableLegSize.Z - ChairLegSeatHeight);
-		//ChairOffsetZ = 0;
 	}
 	else
 	{
@@ -117,7 +115,7 @@ void ATable::BuildMesh()
 	Super::BuildMesh();
 
 	const float LegHeight = GameMode->TableLegSize.Z;
-	const FVector Position = FVector(0, 0, LegHeight + (Size.Z * .5f));
+	const FVector PositionOffset = FVector(0, 0, LegHeight + (Size.Z * .5f));
 
 	BuildCube(Size, FVector::ZeroVector, FColor::Red);
 
@@ -126,7 +124,8 @@ void ATable::BuildMesh()
 	//Vertices[i] = TableMatrix.TransformPosition(Vertices[i]);
 
 	GenerateMesh();
-	SetActorLocation(Position);
+
+	SetActorLocation(GetActorLocation() + PositionOffset);
 }
 
 // Called every frame
@@ -190,18 +189,22 @@ void ATable::UpdateTableMesh(const FVector &MovementAmount)
 	float XSign = FMath::Sign(StartHitPoint.X - StartCenter.X);
 	float YSign = FMath::Sign(StartHitPoint.Y - StartCenter.Y);
 
+	//This is to transform the local position of vertices to the world position, due to get the correct sign of movement
+	FVector ActorLocation = GetActorLocation();
+
 	for (int32 i = 0; i < Vertices.Num(); i++)
 	{
 		FVector CurrMovementAmount = MovementAmount;
+		
 		FVector CurrVertex = StartVertices[i];
 
 		//Freeze the vertex location 
-		if (FMath::Sign(CurrVertex.X - StartCenter.X) != XSign)
+		if (FMath::Sign((CurrVertex.X + ActorLocation.X) - StartCenter.X) != XSign)
 		{
 			CurrMovementAmount.X = 0;
 		}
 
-		if (FMath::Sign(CurrVertex.Y - StartCenter.Y) != YSign)
+		if (FMath::Sign((CurrVertex.Y + ActorLocation.Y) - StartCenter.Y) != YSign)
 		{
 			CurrMovementAmount.Y = 0;
 		}
@@ -212,6 +215,8 @@ void ATable::UpdateTableMesh(const FVector &MovementAmount)
 	//Updating Mesh
 	UpdateMesh();
 }
+
+#pragma region UpdatingTableComponents
 
 void ATable::UpdateLegsTransform()
 {
@@ -268,6 +273,10 @@ void ATable::UpdateTransforms(TArray<AActor*> ActorsToUpdate, const TArray<FVect
 		ActorsToUpdate[i]->SetActorLocation(NewPosition);
 	}
 }
+
+#pragma endregion UpdatingTableComponents
+
+#pragma region ChairsManagement
 
 void ATable::CalculateChairs()
 {
@@ -404,6 +413,8 @@ void ATable::FixChairTransform(AChair &Chair, FVector StartSpawnPoint, FVector S
 	Chair.SetActorRotation(FRotator(0, Yaw, 0));
 }
 
+#pragma endregion ChairsManagement
+
 void ATable::StartRecordingMovement()
 {
 	FHitResult HitResult;
@@ -421,7 +432,7 @@ void ATable::StartRecordingMovement()
 
 		if (bIsResizePoint && bIsVaild)
 		{
-			bRecordingMovement = bIsResizePoint;
+			bRecordingMovement = true;
 
 			StartHitPoint = HitResult.ImpactPoint;
 			StartHitPoint.Z = ActorHit->GetActorLocation().Z; //Just for more accurate calculus

@@ -88,7 +88,6 @@ private:
 
 	FVector StartHitPoint;
 	FVector StartCenter;
-
 	TArray<FVector> StartVertices;
 
 	/** How far chair is from the side of the table */

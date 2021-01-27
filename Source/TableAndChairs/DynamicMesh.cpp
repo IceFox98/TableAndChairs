@@ -38,24 +38,20 @@ void ADynamicMesh::BuildMesh()
 
 void ADynamicMesh::GenerateMesh()
 {
-	Mesh->CreateMeshSection(0, Vertices, Triangles, Normals, UVs, VertexColors, TArray<FProcMeshTangent>(), true);
+	Mesh->CreateMeshSection(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
 
 	if (Material)
 	{
 		Mesh->SetMaterial(0, Material);
 	}
-	else
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("No Material selected!"));
-	}
 }
 
 void ADynamicMesh::UpdateMesh()
 {
-	Mesh->UpdateMeshSection(0, Vertices, Normals, UVs, VertexColors, TArray<FProcMeshTangent>());
+	Mesh->UpdateMeshSection(0, Vertices, Normals, UVs, VertexColors, Tangents);
 }
 
-void ADynamicMesh::BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &InNormals, const FColor &Color)
+void ADynamicMesh::BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &InNormal, const FVector &InTangent, const FColor &Color)
 {
 	const int32 VertexCount = 4; //4 vertices for each quad
 	const int32 TrianglesCount = 2 * 3; //2 triangles per quad, 3 vertices each
@@ -65,6 +61,7 @@ void ADynamicMesh::BuildQuad(const FVector &BottomLeft, const FVector &BottomRig
 	Normals.AddUninitialized(VertexCount);
 	VertexColors.AddUninitialized(VertexCount);
 	UVs.AddUninitialized(VertexCount);
+	Tangents.AddUninitialized(VertexCount);
 
 	const int32 Index1 = VertexIndex++;
 	const int32 Index2 = VertexIndex++;
@@ -100,8 +97,9 @@ void ADynamicMesh::BuildQuad(const FVector &BottomLeft, const FVector &BottomRig
 	Triangles[TrianglesIndex++] = Index3;
 	Triangles[TrianglesIndex++] = Index4;
 
-	// In a cube all vertices of a face have the same normals
-	Normals[Index1] = Normals[Index2] = Normals[Index3] = Normals[Index4] = InNormals;
+	// In a cube all vertices of a face have the same normals and tangents
+	Normals[Index1] = Normals[Index2] = Normals[Index3] = Normals[Index4] = InNormal;
+	Tangents[Index1] = Tangents[Index2] = Tangents[Index3] = Tangents[Index4] = FProcMeshTangent(InTangent, false);
 }
 
 void ADynamicMesh::BuildCube(const FVector &MeshSize, const FVector &Position, const FColor &Color)
@@ -120,12 +118,13 @@ void ADynamicMesh::BuildCube(const FVector &MeshSize, const FVector &Position, c
 	FVector V7 = FVector(OffsetX, -OffsetY, OffsetZ) + Position; //Back - Top Right
 	FVector V8 = FVector(OffsetX, OffsetY, OffsetZ) + Position; //Back - Top Left
 
-	BuildQuad(V1, V2, V3, V4, FVector(-1, 0, 0), Color); //Front face
-	BuildQuad(V6, V1, V4, V7, FVector(0, -1, 0), Color); //Left face
-	BuildQuad(V2, V5, V8, V3, FVector(0, 1, 0), Color); //Right face
-	BuildQuad(V5, V6, V7, V8, FVector(1, 0, 0), Color); //Back face
-	BuildQuad(V4, V3, V8, V7, FVector(0, 0, 1), Color); //Top face
-	BuildQuad(V6, V5, V2, V1, FVector(0, 0, -1), Color); //Bottom face
+	//Tangent is the right vector of the normal
+	BuildQuad(V1, V2, V3, V4, FVector(-1, 0, 0), FVector(0, -1, 0), Color); //Front face
+	BuildQuad(V6, V1, V4, V7, FVector(0, -1, 0), FVector(1, 0, 0), Color); //Left face
+	BuildQuad(V2, V5, V8, V3, FVector(0, 1, 0), FVector(-1, 0, 0), Color); //Right face
+	BuildQuad(V5, V6, V7, V8, FVector(1, 0, 0), FVector(0, 1, 0), Color); //Back face
+	BuildQuad(V4, V3, V8, V7, FVector(0, 0, 1), FVector(0, 1, 0), Color); //Top face
+	BuildQuad(V6, V5, V2, V1, FVector(0, 0, -1), FVector(0, -1, 0), Color); //Bottom face
 }
 
 void ADynamicMesh::ResetBuffers()
@@ -135,6 +134,7 @@ void ADynamicMesh::ResetBuffers()
 	Normals.Empty();
 	UVs.Empty();
 	VertexColors.Empty();
+	Tangents.Empty();
 
 	VertexIndex = 0;
 	TrianglesIndex = 0;

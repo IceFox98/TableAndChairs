@@ -64,7 +64,7 @@ protected:
 
 private:
 
-	void BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &Normals, const FColor &Color);
+	void BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &Normal, const FVector &InTangent, const FColor &Color);
 
 	/** The current index of Vertices array */
 	int32 VertexIndex;
@@ -79,7 +79,7 @@ private:
 	TArray<FVector> Normals;
 
 	/** The Tangents of this mesh */
-	TArray<FVector> Tangents;
+	TArray<FProcMeshTangent> Tangents;
 
 	/** The UVs of this mesh */
 	TArray<FVector2D> UVs;
