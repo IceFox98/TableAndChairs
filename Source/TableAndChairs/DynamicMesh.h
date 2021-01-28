@@ -26,6 +26,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void HandleDestruction();
+
 	/**
 	 * Calls the function of UPorceduralMesh class to generate the mesh.
 	 */

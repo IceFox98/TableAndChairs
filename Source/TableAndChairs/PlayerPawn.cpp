@@ -57,6 +57,7 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("Zoom", this, &APlayerPawn::Zoom);
 	PlayerInputComponent->BindAxis("Rotate", this, &ADefaultPawn::TurnAtRate);
 	PlayerInputComponent->BindAction("SpawnNewMesh", IE_Pressed, this, &APlayerPawn::SpawnNewMesh);
+	PlayerInputComponent->BindAction("RemoveMesh", IE_Pressed, this, &APlayerPawn::RemoveMesh);
 }
 
 void APlayerPawn::Zoom(float InputAxis)
@@ -97,7 +98,7 @@ void APlayerPawn::SpawnNewMesh()
 
 	if (bHasHit)
 	{
-		bool bCanSpawn = false;
+		bool bCanSpawn = true;
 
 		FVector SpawnPoint = HitResult.ImpactPoint;
 
@@ -123,6 +124,34 @@ void APlayerPawn::SpawnNewMesh()
 		if (bCanSpawn) //Spawn at mouse position
 		{
 			GetWorld()->SpawnActor<ADynamicMesh>(GameMode->MeshToSpawn, SpawnPoint, FRotator::ZeroRotator);
+		}
+	}
+}
+
+void APlayerPawn::RemoveMesh()
+{
+	if (!PlayerController)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerController is NULL. Unable to spawn new mesh."));
+		return;
+	}
+
+	FHitResult HitResult;
+	bool bHasHit = PlayerController->GetHitResultUnderCursor(ECC_Visibility, true, HitResult);
+
+	if (bHasHit)
+	{
+		AActor* ActorHit = HitResult.GetActor();
+		bool bIsTable = ActorHit->IsA(ATable::StaticClass());
+
+		if (bIsTable)
+		{
+			ATable* Table = Cast<ATable>(ActorHit);
+
+			if (Table) //Handling Destruction
+			{
+				Table->HandleDestruction();
+			}
 		}
 	}
 }

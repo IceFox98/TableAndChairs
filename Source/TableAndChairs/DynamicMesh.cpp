@@ -26,6 +26,11 @@ void ADynamicMesh::BeginPlay()
 	GameMode = Cast<ATableAndChairsGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
 }
 
+void ADynamicMesh::HandleDestruction()
+{
+	Destroy();
+}
+
 void ADynamicMesh::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

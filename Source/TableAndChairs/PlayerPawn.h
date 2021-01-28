@@ -53,4 +53,7 @@ private:
 
 	/** Generates a new Table only if there's enough available space */
 	void SpawnNewMesh();
+
+	/** Removes the mesh pointed by mouse */
+	void RemoveMesh();
 };

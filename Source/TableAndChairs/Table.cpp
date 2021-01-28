@@ -48,6 +48,7 @@ void ATable::BeginPlay()
 		return;
 	}
 
+
 	SpawnTableLegs();
 	SpawnResizePoints();
 
@@ -57,6 +58,42 @@ void ATable::BeginPlay()
 	CalculateChairs();
 
 	SetupInputBinding();
+}
+
+void ATable::HandleDestruction()
+{
+	//Delete Chirs
+	for (TPair<EAxes, FChairs>& Pair : ChairsOnAxis)
+	{
+		for (AChair* Chair : Pair.Value.Chairs)
+		{
+			if (Chair)
+			{
+				Chair->HandleDestruction();
+			}
+		}
+	}
+
+	//Delete Legs
+	for (ATableLeg* TableLeg : Legs)
+	{
+		if (TableLeg)
+		{
+			TableLeg->HandleDestruction();
+		}
+	}
+
+	//Delete ResizePoints
+	for (AResizePoint* ResizePoint : ResizePoints)
+	{
+		if (ResizePoint)
+		{
+			ResizePoint->Destroy();
+		}
+	}
+
+	//Delete this Actor
+	Super::HandleDestruction();
 }
 
 void ATable::SpawnTableLegs()
@@ -195,7 +232,7 @@ void ATable::UpdateTableMesh(const FVector &MovementAmount)
 	for (int32 i = 0; i < Vertices.Num(); i++)
 	{
 		FVector CurrMovementAmount = MovementAmount;
-		
+
 		FVector CurrVertex = StartVertices[i];
 
 		//Freeze the vertex location 
