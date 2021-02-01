@@ -1,10 +1,7 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "TableAndChairsGameModeBase.h"
-#include "GameFramework/Actor.h"
-#include "Table.h"
-
 
 void ATableAndChairsGameModeBase::BeginPlay()
 {
@@ -24,12 +21,11 @@ void ATableAndChairsGameModeBase::SpawnMesh()
 		return;
 	}
 
-	if (!MeshToSpawn)
+	if (!ActorToSpawn)
 	{
-		UE_LOG(LogTemp, Error, TEXT("MeshToSpawn is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("ActorToSpawn is NULL!"));
 		return;
 	}
 
-	World->SpawnActor<ADynamicMesh>(MeshToSpawn);
+	World->SpawnActor<AActor>(ActorToSpawn);
 }
-

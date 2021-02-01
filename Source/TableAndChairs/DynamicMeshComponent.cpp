@@ -1,62 +1,26 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "DynamicMesh.h"
 
-// Sets default values
-ADynamicMesh::ADynamicMesh()
+#include "DynamicMeshComponent.h"
+
+UDynamicMeshComponent::UDynamicMeshComponent(const FObjectInitializer& ObjectInitializer)
+	:Super(ObjectInitializer)
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
-
-	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	SetRootComponent(Root);
-
-	Mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Mesh"));
-	Mesh->SetupAttachment(RootComponent);
-
 	VertexIndex = 0;
 	TrianglesIndex = 0;
 }
 
-// Called when the game starts or when spawned
-void ADynamicMesh::BeginPlay()
+void UDynamicMeshComponent::GenerateMesh()
 {
-	Super::BeginPlay();
+	CreateMeshSection(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
 
-	GameMode = Cast<ATableAndChairsGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+	//if (Material)
+	//{
+	//	Mesh->SetMaterial(0, Material);
+	//}
 }
 
-void ADynamicMesh::HandleDestruction()
-{
-	Destroy();
-}
-
-void ADynamicMesh::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
-void ADynamicMesh::BuildMesh()
-{
-	//Nothing
-}
-
-void ADynamicMesh::GenerateMesh()
-{
-	Mesh->CreateMeshSection(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
-
-	if (Material)
-	{
-		Mesh->SetMaterial(0, Material);
-	}
-}
-
-void ADynamicMesh::UpdateMesh()
-{
-	Mesh->UpdateMeshSection(0, Vertices, Normals, UVs, VertexColors, Tangents);
-}
-
-void ADynamicMesh::BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &InNormal, const FVector &InTangent, const FColor &Color)
+void UDynamicMeshComponent::BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &InNormal, const FVector &InTangent, const FColor &Color)
 {
 	const int32 VertexCount = 4; //4 vertices for each quad
 	const int32 TrianglesCount = 2 * 3; //2 triangles per quad, 3 vertices each
@@ -107,7 +71,7 @@ void ADynamicMesh::BuildQuad(const FVector &BottomLeft, const FVector &BottomRig
 	Tangents[Index1] = Tangents[Index2] = Tangents[Index3] = Tangents[Index4] = FProcMeshTangent(InTangent, false);
 }
 
-void ADynamicMesh::BuildCube(const FVector &MeshSize, const FVector &Position, const FColor &Color)
+void UDynamicMeshComponent::BuildCube(const FVector &MeshSize, const FVector &Position, const FColor &Color)
 {
 	// Divide in half the offset to get center of object
 	const float OffsetX = MeshSize.X * .5f;
@@ -130,19 +94,4 @@ void ADynamicMesh::BuildCube(const FVector &MeshSize, const FVector &Position, c
 	BuildQuad(V5, V6, V7, V8, FVector(1, 0, 0), FVector(0, 1, 0), Color); //Back face
 	BuildQuad(V4, V3, V8, V7, FVector(0, 0, 1), FVector(0, 1, 0), Color); //Top face
 	BuildQuad(V6, V5, V2, V1, FVector(0, 0, -1), FVector(0, -1, 0), Color); //Bottom face
-}
-
-void ADynamicMesh::ResetBuffers()
-{
-	Vertices.Empty();
-	Triangles.Empty();
-	Normals.Empty();
-	UVs.Empty();
-	VertexColors.Empty();
-	Tangents.Empty();
-
-	VertexIndex = 0;
-	TrianglesIndex = 0;
-
-	Mesh->ClearAllMeshSections();
 }

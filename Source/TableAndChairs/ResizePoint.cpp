@@ -1,18 +1,42 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+
 #include "ResizePoint.h"
 
-// Sets default values
-AResizePoint::AResizePoint()
+// Sets default values for this component's properties
+UResizePoint::UResizePoint()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
+	// off to improve performance if you don't need them.
+	PrimaryComponentTick.bCanEverTick = true;
 
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+
+	//MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponentTest"));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'"));
-	MeshComponent->SetStaticMesh(SphereMeshAsset.Object);
-	MeshComponent->SetRelativeScale3D(FVector(0.3, 0.3, 0.3));
+	SetStaticMesh(SphereMeshAsset.Object);
+	SetRelativeScale3D(FVector(0.3, 0.3, 0.3));
 
-	SetRootComponent(MeshComponent);
+	//MeshComponent->AttachTo(this);
+
 }
+
+
+// Called when the game starts
+void UResizePoint::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// ...
+
+}
+
+
+// Called every frame
+void UResizePoint::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// ...
+}
+

@@ -3,56 +3,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
-#include "Kismet/GameplayStatics.h"
-#include "TableAndChairsGameModeBase.h"
-#include "DynamicMesh.generated.h"
+#include "DynamicMeshComponent.generated.h"
 
+/**
+ *
+ */
 UCLASS()
-class TABLEANDCHAIRS_API ADynamicMesh : public AActor
+class TABLEANDCHAIRS_API UDynamicMeshComponent : public UProceduralMeshComponent
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	ADynamicMesh();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void HandleDestruction();
+	// Sets default values for this actor's properties
+	UDynamicMeshComponent(const FObjectInitializer& ObjectInitializer);
 
 	/**
 	 * Calls the function of UPorceduralMesh class to generate the mesh.
 	 */
 	void GenerateMesh();
-
-	UPROPERTY(VisibleAnywhere)
-		USceneComponent* Root;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-		UProceduralMeshComponent* Mesh;
-
-	UPROPERTY(EditDefaultsOnly)
-		UMaterial* Material;
-
-protected:
-
-	ATableAndChairsGameModeBase* GameMode;
-
-	/** The Vertices of this mesh */
-	TArray<FVector> Vertices;
-
-	virtual void BuildMesh();
-
-	/** Updates the first section of this mesh, using the values of member variables */
-	void UpdateMesh();
 
 	/**
 	 * Adds the Vertices, Triangles and Normals necessary to create the mesh
@@ -61,8 +30,22 @@ protected:
 	 */
 	void BuildCube(const FVector &MeshSize, const FVector &Position, const FColor &Color);
 
+protected:
+
+	//ATableAndChairsGameModeBase* GameMode;
+
+	/** The Vertices of this mesh */
+	TArray<FVector> Vertices;
+
+	//virtual void BuildMesh();
+
+	/** Updates the first section of this mesh, using the values of member variables */
+	//void UpdateMesh();
+
+
+
 	/** Removes all sections of this Mesh and resets Vertices, Triangles, Normals, ... */
-	void ResetBuffers();
+	//void ResetBuffers();
 
 private:
 

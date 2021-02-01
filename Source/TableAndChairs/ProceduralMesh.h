@@ -4,19 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Table.generated.h"
+#include "ProceduralMesh.generated.h"
 
 class UDynamicMeshComponent;
-class UResizePointManager;
 
 UCLASS()
-class TABLEANDCHAIRS_API ATable : public AActor
+class TABLEANDCHAIRS_API AProceduralMesh : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ATable();
+	AProceduralMesh();
+
+	UPROPERTY(VisibleAnywhere)
+	UDynamicMeshComponent* DynamicMeshComponent;
 
 protected:
 	// Called when the game starts or when spawned
@@ -26,12 +28,4 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void BuildMesh(const FVector &Center, const FVector &Extent);
-private:
-
-	UPROPERTY(VisibleAnywhere)
-		UDynamicMeshComponent* DynamicMeshComponent;
-
-	UPROPERTY(VisibleAnywhere)
-		UResizePointManager* ResizePointManager;
 };
