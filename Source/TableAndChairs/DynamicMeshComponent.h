@@ -30,6 +30,12 @@ public:
 	 */
 	void BuildCube(const FVector &MeshSize, const FVector &Position, const FColor &Color);
 
+	/** Updates the first section of this mesh, using the values of member variables */
+	void UpdateMesh();
+
+	/** Removes all sections of this Mesh and resets Vertices, Triangles, Normals, ... */
+	void ResetBuffers();
+
 protected:
 
 	//ATableAndChairsGameModeBase* GameMode;
@@ -38,14 +44,6 @@ protected:
 	TArray<FVector> Vertices;
 
 	//virtual void BuildMesh();
-
-	/** Updates the first section of this mesh, using the values of member variables */
-	//void UpdateMesh();
-
-
-
-	/** Removes all sections of this Mesh and resets Vertices, Triangles, Normals, ... */
-	//void ResetBuffers();
 
 private:
 

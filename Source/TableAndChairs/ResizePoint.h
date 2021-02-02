@@ -24,9 +24,9 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-//private:
-//
-//	/** The mesh associated with this Pawn. */
-//	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-//		UStaticMeshComponent* MeshComponent;
+	void SetPosition(const FVector &MovementAmount);
+
+private:
+
+	class UResizePointManager* ResizePointManager;
 };

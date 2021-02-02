@@ -95,3 +95,23 @@ void UDynamicMeshComponent::BuildCube(const FVector &MeshSize, const FVector &Po
 	BuildQuad(V4, V3, V8, V7, FVector(0, 0, 1), FVector(0, 1, 0), Color); //Top face
 	BuildQuad(V6, V5, V2, V1, FVector(0, 0, -1), FVector(0, -1, 0), Color); //Bottom face
 }
+
+void UDynamicMeshComponent::UpdateMesh()
+{
+	UpdateMeshSection(0, Vertices, Normals, UVs, VertexColors, Tangents);
+}
+
+void UDynamicMeshComponent::ResetBuffers()
+{
+	Vertices.Empty();
+	Triangles.Empty();
+	Normals.Empty();
+	UVs.Empty();
+	VertexColors.Empty();
+	Tangents.Empty();
+
+	VertexIndex = 0;
+	TrianglesIndex = 0;
+
+	//Mesh->ClearAllMeshSections();
+}

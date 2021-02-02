@@ -2,6 +2,7 @@
 
 
 #include "ResizePoint.h"
+#include "ResizePointManager.h"
 
 // Sets default values for this component's properties
 UResizePoint::UResizePoint()
@@ -10,14 +11,9 @@ UResizePoint::UResizePoint()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-
-	//MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponentTest"));
-
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'"));
 	SetStaticMesh(SphereMeshAsset.Object);
 	SetRelativeScale3D(FVector(0.3, 0.3, 0.3));
-
-	//MeshComponent->AttachTo(this);
 
 }
 
@@ -27,8 +23,7 @@ void UResizePoint::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-
+	ResizePointManager = Cast<UResizePointManager>(GetOwner()->GetComponentByClass(UResizePointManager::StaticClass()));
 }
 
 
@@ -37,6 +32,15 @@ void UResizePoint::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+}
+
+void UResizePoint::SetPosition(const FVector &NewLocation)
+{
+	SetRelativeLocation(NewLocation);
+
+	if (ResizePointManager)
+	{
+		ResizePointManager->OnResizePointMovedDelegate.ExecuteIfBound(NewLocation);
+	}
 }
 

@@ -27,5 +27,5 @@ void ATableAndChairsGameModeBase::SpawnMesh()
 		return;
 	}
 
-	World->SpawnActor<AActor>(ActorToSpawn);
+	World->SpawnActor<AActor>(ActorToSpawn, FVector::ZeroVector, FRotator::ZeroRotator);
 }
