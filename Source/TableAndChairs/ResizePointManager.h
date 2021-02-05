@@ -10,7 +10,7 @@
 
 class UResizePoint;
 
-DECLARE_DELEGATE_OneParam(FResizePointMovedDelegate, const FVector&)
+DECLARE_DELEGATE_ThreeParams(FResizePointMovedDelegate, const bool, const UResizePoint*, const FVector&)
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TABLEANDCHAIRS_API UResizePointManager : public UActorComponent
@@ -55,6 +55,6 @@ private:
 	bool bRecordingMovement;
 
 	UFUNCTION()
-		void OnResizePointMoved(const FVector &ResizePointPosition);
+		void OnPositionChecked(const bool IsValid, const UResizePoint *ResizePointRef, const FVector &CheckedPosition);
 
 };

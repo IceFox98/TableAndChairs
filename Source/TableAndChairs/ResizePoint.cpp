@@ -34,13 +34,15 @@ void UResizePoint::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 
 }
 
-void UResizePoint::SetPosition(const FVector &NewLocation)
+void UResizePoint::CheckPosition(const FVector &NewLocation)
 {
-	SetRelativeLocation(NewLocation);
+	bool IsValid = true; //Add any position checks here
+
+	//SetWorldLocation(NewLocation);
 
 	if (ResizePointManager)
 	{
-		ResizePointManager->OnResizePointMovedDelegate.ExecuteIfBound(NewLocation);
+		ResizePointManager->OnResizePointMovedDelegate.ExecuteIfBound(IsValid, this, NewLocation);
 	}
 }
 

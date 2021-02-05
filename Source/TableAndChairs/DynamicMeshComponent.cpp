@@ -20,6 +20,11 @@ void UDynamicMeshComponent::GenerateMesh()
 	//}
 }
 
+void UDynamicMeshComponent::UpdateMesh()
+{
+	UpdateMeshSection(0, Vertices, Normals, UVs, VertexColors, Tangents);
+}
+
 void UDynamicMeshComponent::BuildQuad(const FVector &BottomLeft, const FVector &BottomRight, const FVector &TopRight, const FVector &TopLeft, const FVector &InNormal, const FVector &InTangent, const FColor &Color)
 {
 	const int32 VertexCount = 4; //4 vertices for each quad
@@ -96,11 +101,6 @@ void UDynamicMeshComponent::BuildCube(const FVector &MeshSize, const FVector &Po
 	BuildQuad(V6, V5, V2, V1, FVector(0, 0, -1), FVector(0, -1, 0), Color); //Bottom face
 }
 
-void UDynamicMeshComponent::UpdateMesh()
-{
-	UpdateMeshSection(0, Vertices, Normals, UVs, VertexColors, Tangents);
-}
-
 void UDynamicMeshComponent::ResetBuffers()
 {
 	Vertices.Empty();
@@ -112,6 +112,4 @@ void UDynamicMeshComponent::ResetBuffers()
 
 	VertexIndex = 0;
 	TrianglesIndex = 0;
-
-	//Mesh->ClearAllMeshSections();
 }

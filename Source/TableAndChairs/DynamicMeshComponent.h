@@ -33,7 +33,7 @@ public:
 	/** Updates the first section of this mesh, using the values of member variables */
 	void UpdateMesh();
 
-	/** Removes all sections of this Mesh and resets Vertices, Triangles, Normals, ... */
+	/** Resets Vertices, Triangles, Normals, ... */
 	void ResetBuffers();
 
 protected:

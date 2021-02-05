@@ -24,7 +24,7 @@ void UResizePointManager::BeginPlay()
 
 	SetupInputBinding();
 
-	OnResizePointMovedDelegate.BindUObject(this, &UResizePointManager::OnResizePointMoved);
+	OnResizePointMovedDelegate.BindUObject(this, &UResizePointManager::OnPositionChecked);
 
 }
 
@@ -91,8 +91,8 @@ void UResizePointManager::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 		if (ResizePointHit)
 		{
-			const FVector NewLocation = StartResizePointPosition + MovementAmount;
-			ResizePointHit->SetPosition(NewLocation);
+			//const FVector NewLocation = StartResizePointPosition + MovementAmount;
+			ResizePointHit->CheckPosition(IntersectionPoint);
 		}
 	}
 }
@@ -153,7 +153,7 @@ void UResizePointManager::StartRecordingMovement()
 			StartHitPoint = HitResult.ImpactPoint;
 			StartHitPoint.Z = ResizePointHit->GetComponentLocation().Z;
 
-			StartResizePointPosition = ResizePointHit->GetRelativeLocation();
+			StartResizePointPosition = ResizePointHit->GetComponentLocation();
 		}
 	}
 }
@@ -165,27 +165,38 @@ void UResizePointManager::StopRecordingMovement()
 	bRecordingMovement = false;
 }
 
-void UResizePointManager::OnResizePointMoved(const FVector &ResizePointPosition)
+void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoint *ResizePointRef, const FVector &CheckedPosition)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("OnResizePointMoved called. Movement Amount: %s"), *ResizePointPosition.ToString());
-
-	TArray<FVector> WorldPositions = TArray<FVector>();
-
-	for (int32 i = 0; i < ResizePoints.Num(); i++)
+	if (!IsValid)
 	{
-		UResizePoint* ResizePoint = ResizePoints[i];
-		const FVector CurrentResizePointPosition = ResizePoint->GetComponentLocation();
-		WorldPositions.Add(CurrentResizePointPosition);
+		UE_LOG(LogTemp, Error, TEXT("OnResizePointMoved: The position is not valid: %s"), *CheckedPosition.ToString());
+		return;
 	}
 
-	const FBox BoxForCenter(WorldPositions);
+	IResizableObject* ResizableObject = Cast<IResizableObject>(GetOwner());
 
-	const FVector StartCenter = BoxForCenter.GetCenter();
+	if (!ResizableObject)
+	{
+		UE_LOG(LogTemp, Error, TEXT("This Object can't be resized."));
+		return;
+	}
 
-	WorldPositions.Empty();
+	//Controllare che la posizione del resize point spostato non sia più grande della max size
+	// -- Se è più grande, restituirla clampata e riposizionare il punto
+	// -- Se è più piccola proseguire
 
-	const float MovedXSign = FMath::Sign(ResizePointPosition.X - StartCenter.X);
-	const float MovedYSign = FMath::Sign(ResizePointPosition.Y - StartCenter.Y);
+
+	float DirectionX = FMath::Sign(ResizePointRef->GetRelativeLocation().X);
+	float DirectionY = FMath::Sign(ResizePointRef->GetRelativeLocation().Y);
+	const FVector Direction(DirectionX, DirectionY, 1);
+
+	const FVector ClampedPosition = ResizableObject->ClampSize(Direction, CheckedPosition);
+
+
+
+	const FVector DeltaSize = ClampedPosition - ResizePointRef->GetComponentLocation();
+
+	const FVector NewCenter = ResizableObject->ResizeMesh(Direction, DeltaSize);
 
 	for (int32 i = 0; i < ResizePoints.Num(); i++)
 	{
@@ -193,49 +204,22 @@ void UResizePointManager::OnResizePointMoved(const FVector &ResizePointPosition)
 
 		const FVector CurrentResizePointPosition = ResizePoint->GetRelativeLocation();
 
-		const float CurrXSign = FMath::Sign(CurrentResizePointPosition.X - StartCenter.X);
-		const float CurrYSign = FMath::Sign(CurrentResizePointPosition.Y - StartCenter.Y);
+		const float CurrXSign = FMath::Sign(CurrentResizePointPosition.X);
+		const float CurrYSign = FMath::Sign(CurrentResizePointPosition.Y);
 
-		if (MovedXSign == CurrXSign && MovedYSign == CurrYSign) //It's the same ResizePoint we've just moved
+		FVector DeltaPosition = DeltaSize * .5f;
+
+		if (DirectionX != CurrXSign)
 		{
-			WorldPositions.Add(ResizePoint->GetComponentLocation());
-			continue;
+			DeltaPosition.X *= -1;
 		}
 
-		FVector NewPosition = ResizePointPosition;
-
-		if (MovedXSign != CurrXSign)
+		if (DirectionY != CurrYSign)
 		{
-			NewPosition.X = CurrentResizePointPosition.X;
+			DeltaPosition.Y *= -1;
 		}
 
-		if (MovedYSign != CurrYSign)
-		{
-			NewPosition.Y = CurrentResizePointPosition.Y;
-		}
-
-		ResizePoint->SetRelativeLocation(NewPosition);
-
-		WorldPositions.Add(ResizePoint->GetComponentLocation());
-	}
-
-	const FBox Box(WorldPositions);
-
-	const FVector Center = Box.GetCenter();
-	const FVector Extent = Box.GetSize();
-
-	UE_LOG(LogTemp, Warning, TEXT("Center: %s"), *Center.ToString());
-	UE_LOG(LogTemp, Warning, TEXT("Extent: %s"), *Extent.ToString());
-
-	if (GetOwner()->GetClass()->ImplementsInterface(UResizableObject::StaticClass()))
-	{
-		IResizableObject* Interface = Cast<IResizableObject>(GetOwner());
-		bool Result = Interface->ResizeMesh(Center, Extent);
-
-		if (!Result)
-		{
-			StopRecordingMovement();
-		}
+		ResizePoint->SetWorldLocation(ResizePoint->GetComponentLocation() + DeltaPosition);
 
 	}
 }

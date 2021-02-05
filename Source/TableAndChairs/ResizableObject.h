@@ -24,5 +24,8 @@ class TABLEANDCHAIRS_API IResizableObject
 public:
 
 	UFUNCTION()
-		virtual bool ResizeMesh(const FVector &Center, const FVector &Extent) { return false; };
+		virtual FVector ResizeMesh(const FVector &Direction, const FVector &DeltaSize) { return FVector::ZeroVector; };
+
+	UFUNCTION()
+		virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) { return FVector::ZeroVector; };
 };

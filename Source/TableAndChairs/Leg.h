@@ -3,18 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/StaticMeshComponent.h"
-#include "ResizePoint.generated.h"
+#include "DynamicMeshComponent.h"
+#include "Leg.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class TABLEANDCHAIRS_API UResizePoint : public UStaticMeshComponent
+class TABLEANDCHAIRS_API ULeg : public UDynamicMeshComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UResizePoint();
+	ULeg(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	// Called when the game starts
@@ -24,9 +24,6 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void CheckPosition(const FVector &MovementAmount);
-
-private:
-
-	class UResizePointManager* ResizePointManager;
+	void BuildMesh(const FVector &Center, const FVector &Extent);
+		
 };

@@ -9,6 +9,7 @@
 
 class UDynamicMeshComponent;
 class UResizePointManager;
+class ULegsManager;
 
 UCLASS()
 class TABLEANDCHAIRS_API ATable : public AActor, public IResizableObject
@@ -27,7 +28,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void BuildMesh(const FVector &Center, const FVector &Extent);
+	void BuildMesh(const FVector &Center, const FVector &MeshSize, const bool Update);
 
 	UPROPERTY(EditDefaultsOnly)
 		FVector Size;
@@ -36,12 +37,12 @@ public:
 		FVector MaxSize;
 
 	UPROPERTY(EditDefaultsOnly)
-		FVector LegSize;
+		FVector MinSize;
 
-	virtual bool ResizeMesh(const FVector &Center, const FVector &Extent) override;
+	virtual FVector ResizeMesh(const FVector &Direction, const FVector &DeltaSize) override;
 
-	//UPROPERTY(EditDefaultsOnly)
-	//	FVector Size;
+	virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) override;
+
 private:
 
 	UPROPERTY(VisibleAnywhere)
@@ -49,4 +50,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 		UResizePointManager* ResizePointManager;
+
+	UPROPERTY(VisibleAnywhere)
+		ULegsManager* LegsManager;
 };
