@@ -5,6 +5,7 @@
 #include "DynamicMeshComponent.h"
 #include "ResizePointManager.h"
 #include "LegsManager.h"
+#include "ChairsManager.h"
 
 // Sets default values
 ATable::ATable()
@@ -17,6 +18,7 @@ ATable::ATable()
 
 	ResizePointManager = CreateDefaultSubobject<UResizePointManager>("ResizePointManager");
 	LegsManager = CreateDefaultSubobject<ULegsManager>("LegsManager");
+	ChairsManager = CreateDefaultSubobject<UChairsManager>("ChaisManager");
 
 	Size = FVector(400.f, 400.f, 20.f);
 
@@ -44,6 +46,10 @@ void ATable::BeginPlay()
 	//Create legs
 	LegsManager->BuildLegs();
 	LegsManager->UpdateLegsPosition(Extent);
+
+	//Create Chairs
+	ChairsManager->Initialize(LegSize, this);
+	ChairsManager->UpdateChairs(Size);
 }
 
 // Called every frame
@@ -87,6 +93,7 @@ FVector ATable::ResizeMesh(const FVector &Direction, const FVector &DeltaSize)
 		BuildMesh(NewCenter, NewSize, true);
 
 		LegsManager->UpdateLegsPosition(NewSize * .5f);
+		ChairsManager->UpdateChairs(NewSize);
 
 	}
 

@@ -10,6 +10,7 @@
 class UDynamicMeshComponent;
 class UResizePointManager;
 class ULegsManager;
+class UChairsManager;
 
 UCLASS()
 class TABLEANDCHAIRS_API ATable : public AActor, public IResizableObject
@@ -53,4 +54,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 		ULegsManager* LegsManager;
+
+	UPROPERTY(VisibleAnywhere)
+		UChairsManager* ChairsManager;
 };
