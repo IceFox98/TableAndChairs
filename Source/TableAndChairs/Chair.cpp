@@ -10,7 +10,6 @@ UChair::UChair(const FObjectInitializer& ObjectInitializer)
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
 }
 
 
@@ -18,14 +17,12 @@ UChair::UChair(const FObjectInitializer& ObjectInitializer)
 void UChair::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 // Called every frame
 void UChair::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 }
 
 void UChair::BuildMesh(const FVector &SeatSize, const FVector &BackSize, const FVector &LegSize)

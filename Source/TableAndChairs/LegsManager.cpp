@@ -14,19 +14,16 @@ ULegsManager::ULegsManager()
 	LegSize = FVector(30.f, 30.f, 100.f);
 }
 
-
 // Called when the game starts
 void ULegsManager::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 // Called every frame
 void ULegsManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 }
 
 void ULegsManager::BuildLegs()
@@ -71,7 +68,15 @@ void ULegsManager::UpdateLegsPosition(const FVector &ParentExtent)
 	//Update position
 	for (int i = 0; i < LegsPositions.Num(); i++)
 	{
-		Legs[i]->SetRelativeLocation(LegsPositions[i]);
+		ULeg* Leg = Legs[i];
+
+		if (!Leg)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Leg is NULL. Unable to move it."));
+			return;
+		}
+
+		Leg->SetRelativeLocation(LegsPositions[i]);
 	}
 }
 
@@ -79,4 +84,3 @@ FVector ULegsManager::GetLegSize()
 {
 	return LegSize;
 }
-

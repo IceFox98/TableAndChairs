@@ -23,6 +23,9 @@ public:
 	 */
 	void GenerateMesh();
 
+	/** Updates the first section of this mesh, using the values of member variables */
+	void UpdateMesh();
+
 	/**
 	 * Adds the Vertices, Triangles and Normals necessary to create the mesh
 	 * @param MeshSize - The size of the Cube
@@ -30,20 +33,8 @@ public:
 	 */
 	void BuildCube(const FVector &MeshSize, const FVector &Position, const FColor &Color);
 
-	/** Updates the first section of this mesh, using the values of member variables */
-	void UpdateMesh();
-
 	/** Resets Vertices, Triangles, Normals, ... */
 	void ResetBuffers();
-
-protected:
-
-	//ATableAndChairsGameModeBase* GameMode;
-
-	/** The Vertices of this mesh */
-	TArray<FVector> Vertices;
-
-	//virtual void BuildMesh();
 
 private:
 
@@ -54,6 +45,9 @@ private:
 
 	/** The current index of Triangles array */
 	int32 TrianglesIndex;
+
+	/** The Vertices of this mesh */
+	TArray<FVector> Vertices;
 
 	/** The Triangles of this mesh */
 	TArray<int32> Triangles;
@@ -69,5 +63,4 @@ private:
 
 	/** The VertexColors of this mesh */
 	TArray<FColor> VertexColors;
-
 };

@@ -103,41 +103,36 @@ FVector ATable::ResizeMesh(const FVector &Direction, const FVector &DeltaSize)
 
 FVector ATable::ClampSize(const FVector &Direction, const FVector &SizeToCheck)
 {
-	////const FVector CurrentSize = DynamicMeshComponent->Bounds.GetBox().GetSize();
+	const FVector ActorLocation = GetActorLocation();
 
-	//const FVector ActorLocation = GetActorLocation();
+	FVector ReturnSize = SizeToCheck;
 
-	////float DirectionX = FMath::Sign(SizeToCheck.X - ActorLocation.X);
-	////float DirectionY = FMath::Sign(SizeToCheck.Y - ActorLocation.Y);
+	//Just because when we resize the mesh, the pivot is always in the center
+	const FVector MaxSizeHalf = MaxSize * .5f;
+	const FVector MinSizeHalf = MinSize * .5f;
 
-	//FVector AbsSize = SizeToCheck;
+	float DiffX = FMath::Abs(SizeToCheck.X - ActorLocation.X);
+	float DiffY = FMath::Abs(SizeToCheck.Y - ActorLocation.Y);
 
-	////Just because when we resize the mesh, the pivot is always in the center
-	//const FVector MaxSizeHalf = MaxSize * .5f;
-	//const FVector MinSizeHalf = MinSize * .5f;
+	//When you exceed (with the mouse) the min size, re-set the abs difference so that it clamps automatically
+	if (FMath::Sign(SizeToCheck.X - ActorLocation.X) != FMath::Sign(Direction.X)) 
+	{
+		DiffX = MinSizeHalf.X - 1.f; //Just for clamp
+	}
+	if (FMath::Sign(SizeToCheck.Y - ActorLocation.Y) != FMath::Sign(Direction.Y))
+	{
+		DiffY = MinSizeHalf.Y - 1.f;
+	}
 
-	////UE_LOG(LogTemp, Warning, TEXT("AbsSize: %s"), *AbsSize.ToString());
+	//Clamping
+	if (DiffX > MaxSizeHalf.X || DiffX < MinSizeHalf.X)
+	{
+		ReturnSize.X = (FMath::Clamp(DiffX, MinSizeHalf.X, MaxSizeHalf.X) * Direction.X) + ActorLocation.X;
+	}
+	if (DiffY > MaxSizeHalf.Y || DiffY < MinSizeHalf.Y)
+	{
+		ReturnSize.Y = (FMath::Clamp(DiffY, MinSizeHalf.Y, MaxSizeHalf.Y) * Direction.Y) + ActorLocation.Y;
+	}
 
-	//float DiffX = FMath::Abs(AbsSize.X - ActorLocation.X);
-	//float DiffY = FMath::Abs(AbsSize.Y - ActorLocation.Y);
-
-
-	////FMath::Sign(SizeToCheck.X - ActorLocation.X) == FMath::Sign(Direction.X) || 
-
-	//if (DiffX >= MaxSizeHalf.X || DiffX <= MinSizeHalf.X)
-	//{
-	//	AbsSize.X = (FMath::Clamp(DiffX, MinSizeHalf.X, MaxSizeHalf.X) + GetActorLocation().X) * Direction.X;
-	//}
-
-	//UE_LOG(LogTemp, Warning, TEXT("ActorLocationX: %f - DiffY: %f"), ActorLocation.X, DiffY);
-	////FMath::Sign(SizeToCheck.Y - ActorLocation.Y) == FMath::Sign(Direction.Y) || 
-
-	//if (DiffY >= MaxSizeHalf.Y || DiffY <= MinSizeHalf.Y)
-	//{
-	//	AbsSize.Y = (FMath::Clamp(DiffY, MinSizeHalf.Y, MaxSizeHalf.Y) + GetActorLocation().Y) * Direction.Y;
-	//}
-
-	//return AbsSize;
-
-	return SizeToCheck;
+	return ReturnSize;
 }

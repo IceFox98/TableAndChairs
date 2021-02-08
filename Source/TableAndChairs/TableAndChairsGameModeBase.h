@@ -24,5 +24,4 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 		TSubclassOf<AActor> ActorToSpawn;
-	
 };

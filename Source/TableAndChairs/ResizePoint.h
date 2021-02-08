@@ -24,7 +24,10 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void CheckPosition(const FVector &MovementAmount);
+	/**
+	 * Checks the passed position and calls the delegate OnResizePointMovedDelegate
+	 */
+	void CheckPosition(const FVector &NewPosition);
 
 private:
 

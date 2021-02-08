@@ -10,7 +10,6 @@ ULeg::ULeg(const FObjectInitializer& ObjectInitializer)
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
 }
 
 
@@ -18,7 +17,6 @@ ULeg::ULeg(const FObjectInitializer& ObjectInitializer)
 void ULeg::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 
@@ -26,12 +24,11 @@ void ULeg::BeginPlay()
 void ULeg::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 }
 
-void ULeg::BuildMesh(const FVector &Center, const FVector &Extent)
+void ULeg::BuildMesh(const FVector &Center, const FVector &Size)
 {
-	BuildCube(Extent, FVector::ZeroVector, FColor::Black);
+	BuildCube(Size, FVector::ZeroVector, FColor::Black);
 	GenerateMesh();
 
 	SetRelativeLocation(Center);

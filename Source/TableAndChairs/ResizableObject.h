@@ -13,9 +13,6 @@ class UResizableObject : public UInterface
 	GENERATED_BODY()
 };
 
-/**
- *
- */
 class TABLEANDCHAIRS_API IResizableObject
 {
 	GENERATED_BODY()

@@ -29,19 +29,37 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	/**
+	 * Creates a table with the size indicated and moves the actor at 'Center' position.
+	 * @param Center - The position where the actor will be moved
+	 * @param Update - Do you want to update the current mesh section?
+	 */
 	void BuildMesh(const FVector &Center, const FVector &MeshSize, const bool Update);
 
+	/** The starting size of the table */
 	UPROPERTY(EditDefaultsOnly)
 		FVector Size;
 
-	UPROPERTY(EditDefaultsOnly)
+	/** The maximum size of the table */
+	UPROPERTY(EditAnywhere)
 		FVector MaxSize;
 
-	UPROPERTY(EditDefaultsOnly)
+	/** The minimum size of the table */
+	UPROPERTY(EditAnywhere)
 		FVector MinSize;
 
+	/**
+	 * Resizes the mesh based on the delta and move the actor by half delta
+	 * @param Direction - The direction of the resizing (Unit vector)
+	 */
 	virtual FVector ResizeMesh(const FVector &Direction, const FVector &DeltaSize) override;
 
+	/**
+	 * Clamps the size between a minimum and maximum value, indicated by the Actor.
+	 * Returns the clamped size.
+	 * @param Direction - The direction of the resizing (Unit vector)
+	 * @param SizeToCheck - The size that must be clamped
+	 */
 	virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) override;
 
 private:

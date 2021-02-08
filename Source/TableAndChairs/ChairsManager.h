@@ -48,8 +48,14 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	/**
+	 * Initializes some member variables to calculate chairs' position.
+	 * @param MeshLegSize - The size of the parent leg
+	 * @param ParentActor - The Actor whose chairs will be attached to
+	 */
 	void Initialize(const FVector &MeshLegSize, AActor* ParentActor);
 
+	/** Updates the chairs' position depending on the size of the parent mesh */
 	void UpdateChairs(const FVector &MeshSize);
 		
 private:
@@ -131,5 +137,4 @@ private:
 	 * @param FlipAxis - The axis of the SpawnOffset point which will be multiplied by -1
 	 */
 	void FixChairTransform(UChair &Chair, FVector StartSpawnPoint, FVector SpawnOffset, float Yaw, const EAxes FlipAxis) const;
-
 };

@@ -12,7 +12,6 @@ UResizePointManager::UResizePointManager()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts
@@ -20,12 +19,8 @@ void UResizePointManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-
 	SetupInputBinding();
-
 	OnResizePointMovedDelegate.BindUObject(this, &UResizePointManager::OnPositionChecked);
-
 }
 
 void UResizePointManager::SetupInputBinding()
@@ -74,14 +69,7 @@ void UResizePointManager::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		//Create a plane at ResizePoint position, and get the point where raycast intersect it, due to get the correct amount of movement
 		FVector IntersectionPoint = FMath::LinePlaneIntersection(PlayerStartPosition, HitResult.ImpactPoint, StartHitPoint, FVector(0, 0, 1));
 
-		FVector MovementAmount = FVector::ZeroVector;
-
-		if (IntersectionPoint != FVector::ZeroVector)
-		{
-			//DrawDebugLine(GetWorld(), PlayerStartPosition, IntersectionPoint, FColor::Green, true);
-			MovementAmount = IntersectionPoint - StartHitPoint;
-		}
-		else
+		if (IntersectionPoint == FVector::ZeroVector)
 		{
 			//Something went wrong
 			UE_LOG(LogTemp, Warning, TEXT("NO INTERSECT"));
@@ -91,7 +79,7 @@ void UResizePointManager::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 		if (ResizePointHit)
 		{
-			//const FVector NewLocation = StartResizePointPosition + MovementAmount;
+			//DrawDebugLine(GetWorld(), PlayerStartPosition, IntersectionPoint, FColor::Green, true);
 			ResizePointHit->CheckPosition(IntersectionPoint);
 		}
 	}
@@ -106,6 +94,7 @@ void UResizePointManager::InitializePoints(const FVector &Center, const FVector 
 		FVector(+Extent.X, +Extent.Y, Extent.Z),
 	};
 
+	//Create Resize Points and set their start position
 	for (int32 i = 0; i < Positions.Num(); i++)
 	{
 		UResizePoint* ResizePoint = NewObject<UResizePoint>(this, UResizePoint::StaticClass());
@@ -118,7 +107,6 @@ void UResizePointManager::InitializePoints(const FVector &Center, const FVector 
 	}
 }
 
-
 void UResizePointManager::StartRecordingMovement()
 {
 	FHitResult HitResult;
@@ -126,7 +114,6 @@ void UResizePointManager::StartRecordingMovement()
 
 	if (bHasHit)
 	{
-
 		const UPrimitiveComponent* ComponentHit = HitResult.GetComponent();
 		bool bIsResizePoint = ComponentHit->IsA(UResizePoint::StaticClass());
 
@@ -137,14 +124,12 @@ void UResizePointManager::StartRecordingMovement()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Start Recording"));
 
-			bRecordingMovement = true;
-
 			const UResizePoint* ResizePointToFind = Cast<UResizePoint>(ComponentHit);
 			const int32 Index = ResizePoints.IndexOfByKey(ResizePointToFind);
 
 			if (Index == INDEX_NONE)
 			{
-				UE_LOG(LogTemp, Error, TEXT("Can't find ResizePoint in the array"));
+				UE_LOG(LogTemp, Error, TEXT("Can't find ResizePoint in the array."));
 				return;
 			}
 
@@ -153,7 +138,7 @@ void UResizePointManager::StartRecordingMovement()
 			StartHitPoint = HitResult.ImpactPoint;
 			StartHitPoint.Z = ResizePointHit->GetComponentLocation().Z;
 
-			StartResizePointPosition = ResizePointHit->GetComponentLocation();
+			bRecordingMovement = true;
 		}
 	}
 }
@@ -163,6 +148,7 @@ void UResizePointManager::StopRecordingMovement()
 	UE_LOG(LogTemp, Warning, TEXT("Stop Recording"));
 
 	bRecordingMovement = false;
+	StartHitPoint = FVector::ZeroVector;
 }
 
 void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoint *ResizePointRef, const FVector &CheckedPosition)
@@ -173,6 +159,7 @@ void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoi
 		return;
 	}
 
+	//Get resizable object only
 	IResizableObject* ResizableObject = Cast<IResizableObject>(GetOwner());
 
 	if (!ResizableObject)
@@ -181,32 +168,33 @@ void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoi
 		return;
 	}
 
-	//Controllare che la posizione del resize point spostato non sia più grande della max size
-	// -- Se è più grande, restituirla clampata e riposizionare il punto
-	// -- Se è più piccola proseguire
-
-
+	//Get the direction of the resize point
 	float DirectionX = FMath::Sign(ResizePointRef->GetRelativeLocation().X);
 	float DirectionY = FMath::Sign(ResizePointRef->GetRelativeLocation().Y);
 	const FVector Direction(DirectionX, DirectionY, 1);
 
 	const FVector ClampedPosition = ResizableObject->ClampSize(Direction, CheckedPosition);
-
-
-
 	const FVector DeltaSize = ClampedPosition - ResizePointRef->GetComponentLocation();
 
+	//Resize Mesh and get the new center
 	const FVector NewCenter = ResizableObject->ResizeMesh(Direction, DeltaSize);
 
+	//Set the ResizePoints position
 	for (int32 i = 0; i < ResizePoints.Num(); i++)
 	{
 		UResizePoint* ResizePoint = ResizePoints[i];
+
+		if (!ResizePoint)
+		{
+			continue;
+		}
 
 		const FVector CurrentResizePointPosition = ResizePoint->GetRelativeLocation();
 
 		const float CurrXSign = FMath::Sign(CurrentResizePointPosition.X);
 		const float CurrYSign = FMath::Sign(CurrentResizePointPosition.Y);
 
+		//The other half of the movement was applied by the parent actor (ResizePoints are child of it)
 		FVector DeltaPosition = DeltaSize * .5f;
 
 		if (DirectionX != CurrXSign)
@@ -220,6 +208,5 @@ void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoi
 		}
 
 		ResizePoint->SetWorldLocation(ResizePoint->GetComponentLocation() + DeltaPosition);
-
 	}
 }

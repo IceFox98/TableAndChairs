@@ -103,7 +103,7 @@ void UChairsManager::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector Spaw
 		InitialRotation -= 90.f;
 	}
 
-	TArray<UChair*> &CurrChairs = ChairsOnAxis[FlipAxis].Chairs;//Get reference of array, in order to keep TMap updated
+	TArray<UChair*> &CurrChairs = ChairsOnAxis[FlipAxis].Chairs; //Get reference of array, in order to keep TMap updated
 
 	const int32 AvailableChairsCount = GetAvailableChairsCount(FlipAxis);
 
@@ -173,14 +173,13 @@ void UChairsManager::SpawnChair(const EAxes FlipAxis)
 		return;
 	}
 
-	//Build spawned chair and add to Chairs array
+	//Build spawned chair and add it to Chairs array
 	ChairSpawned->SetupAttachment(Parent->GetRootComponent());
 	ChairSpawned->RegisterComponent();
 	ChairSpawned->SetVisibility(true);
 
 	ChairSpawned->BuildMesh(ChairSeatSize, ChairBackSize, ChairLegSize);
 	ChairsOnAxis[FlipAxis].Chairs.Add(ChairSpawned);
-
 }
 
 #pragma region Pooling

@@ -25,8 +25,12 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	/** Generates the legs component and adds them to the array */
 	void BuildLegs();
 
+	/**
+	 * Updates the legs position depending on the passed extent.
+	 */
 	void UpdateLegsPosition(const FVector &ParentExtent);
 
 	FVector GetLegSize();
@@ -38,5 +42,4 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 		TArray<ULeg*> Legs;
-
 };

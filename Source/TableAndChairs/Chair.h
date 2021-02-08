@@ -26,5 +26,6 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	/** Creates a table with the sizes indicated */
 	void BuildMesh(const FVector &SeatSize, const FVector &BackSize, const FVector &LegSize);
 };

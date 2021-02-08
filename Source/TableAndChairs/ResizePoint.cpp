@@ -11,10 +11,10 @@ UResizePoint::UResizePoint()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
+	//Create a mesh sphere
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'"));
 	SetStaticMesh(SphereMeshAsset.Object);
-	SetRelativeScale3D(FVector(0.3, 0.3, 0.3));
-
+	SetRelativeScale3D(FVector(0.4, 0.4, 0.4));
 }
 
 
@@ -26,23 +26,19 @@ void UResizePoint::BeginPlay()
 	ResizePointManager = Cast<UResizePointManager>(GetOwner()->GetComponentByClass(UResizePointManager::StaticClass()));
 }
 
-
 // Called every frame
 void UResizePoint::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 }
 
-void UResizePoint::CheckPosition(const FVector &NewLocation)
+void UResizePoint::CheckPosition(const FVector &NewPosition)
 {
-	bool IsValid = true; //Add any position checks here
-
-	//SetWorldLocation(NewLocation);
+	bool IsValid = true; //Add any checks here
 
 	if (ResizePointManager)
 	{
-		ResizePointManager->OnResizePointMovedDelegate.ExecuteIfBound(IsValid, this, NewLocation);
+		ResizePointManager->OnResizePointMovedDelegate.ExecuteIfBound(IsValid, this, NewPosition);
 	}
 }
 
