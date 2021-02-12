@@ -9,14 +9,8 @@ UResizePoint::UResizePoint()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	//Create a mesh sphere
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'"));
-	SetStaticMesh(SphereMeshAsset.Object);
-	SetRelativeScale3D(FVector(0.4, 0.4, 0.4));
+	PrimaryComponentTick.bCanEverTick = false;
 }
-
 
 // Called when the game starts
 void UResizePoint::BeginPlay()
@@ -24,12 +18,6 @@ void UResizePoint::BeginPlay()
 	Super::BeginPlay();
 
 	ResizePointManager = Cast<UResizePointManager>(GetOwner()->GetComponentByClass(UResizePointManager::StaticClass()));
-}
-
-// Called every frame
-void UResizePoint::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
 void UResizePoint::CheckPosition(const FVector &NewPosition)
@@ -41,4 +29,3 @@ void UResizePoint::CheckPosition(const FVector &NewPosition)
 		ResizePointManager->OnResizePointMovedDelegate.ExecuteIfBound(IsValid, this, NewPosition);
 	}
 }
-

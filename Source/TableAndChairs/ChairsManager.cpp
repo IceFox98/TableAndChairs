@@ -2,14 +2,14 @@
 
 
 #include "ChairsManager.h"
-#include "Chair.h"
+#include "DynamicMeshLibrary.h"
 
 // Sets default values for this component's properties
 UChairsManager::UChairsManager()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	ChairSeatSize = FVector(60.f, 60.f, 10.f);
 	ChairBackSize = FVector(60.f, 15.f, 80.f);
@@ -22,35 +22,30 @@ UChairsManager::UChairsManager()
 	ChairOffset = 15.f;
 }
 
-
-// Called when the game starts
-void UChairsManager::BeginPlay()
+void UChairsManager::Initialize(const FVector &MeshLegSize, USceneComponent* ParentComp)
 {
-	Super::BeginPlay();
-}
-
-// Called every frame
-void UChairsManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-
-void UChairsManager::Initialize(const FVector &MeshLegSize, AActor* ParentActor)
-{
-	Parent = ParentActor;
+	Parent = ParentComp;
 	ParentLegSize = MeshLegSize;
 
 	ChairWidthWithOffset = ChairSeatSize.X + (ChairOffset * 2);
 
 	const float ChairLegSeatHeight = ChairSeatSize.Z + ChairLegSize.Z;
 	ChairOffsetZ = (ChairSeatSize.Z * .5f) + (ParentLegSize.Z - ChairLegSeatHeight);
+
+	//Initialize ChairMeshData
+	UDynamicMeshLibrary::BuildCube(ChairMeshData, ChairSeatSize, FVector::ZeroVector, FColor::Black); //Seat
+	UDynamicMeshLibrary::BuildCube(ChairMeshData, ChairBackSize, FVector(0, (ChairSeatSize.Y - ChairBackSize.Y) * .5f, (ChairSeatSize.Z + ChairBackSize.Z) * .5f), FColor::Black); //Back
+	UDynamicMeshLibrary::BuildCube(ChairMeshData, ChairLegSize, FVector((-ChairSeatSize.X + ChairLegSize.X) * .5f, (-ChairSeatSize.Y + ChairLegSize.Y) * .5f, (-ChairSeatSize.Z - ChairLegSize.Z) * .5f), FColor::Black); //Leg 1
+	UDynamicMeshLibrary::BuildCube(ChairMeshData, ChairLegSize, FVector((-ChairSeatSize.X + ChairLegSize.X) * .5f, (ChairSeatSize.Y - ChairLegSize.Y) * .5f, (-ChairSeatSize.Z - ChairLegSize.Z) * .5f), FColor::Black); //Leg 2
+	UDynamicMeshLibrary::BuildCube(ChairMeshData, ChairLegSize, FVector((ChairSeatSize.X - ChairLegSize.X) * .5f, (-ChairSeatSize.Y + ChairLegSize.Y) * .5f, (-ChairSeatSize.Z - ChairLegSize.Z) * .5f), FColor::Black); //Leg 3
+	UDynamicMeshLibrary::BuildCube(ChairMeshData, ChairLegSize, FVector((ChairSeatSize.X - ChairLegSize.X) * .5f, (ChairSeatSize.Y - ChairLegSize.Y) * .5f, (-ChairSeatSize.Z - ChairLegSize.Z) * .5f), FColor::Black); //Leg 4
 }
 
 void UChairsManager::UpdateChairs(const FVector &MeshSize)
 {
-	if (!Parent || !Parent->GetRootComponent())
+	if (!Parent)
 	{
-		UE_LOG(LogTemp, Error, TEXT("The Parent Actor or its Root is null. Unable to generate/update chairs."));
+		UE_LOG(LogTemp, Error, TEXT("The Parent Component is null. Unable to generate/update chairs."));
 		return;
 	}
 
@@ -94,8 +89,8 @@ float UChairsManager::GetTotalChairLength(const int ChairsPerSide, const float T
 
 void UChairsManager::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector SpawnOffset, const int ChairsPerSide, const float TotalChairLength, const EAxes FlipAxis)
 {
-	//Get the rotation of the table
-	float InitialRotation = Parent->GetActorRotation().Yaw;
+	//float InitialRotation = Parent->GetActorRotation().Yaw;
+	float InitialRotation = 0.f;
 
 	if (FlipAxis == EAxes::X)
 	{
@@ -103,7 +98,7 @@ void UChairsManager::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector Spaw
 		InitialRotation -= 90.f;
 	}
 
-	TArray<UChair*> &CurrChairs = ChairsOnAxis[FlipAxis].Chairs; //Get reference of array, in order to keep TMap updated
+	TArray<UProceduralMeshComponent*> &CurrChairs = ChairsOnAxis[FlipAxis].Chairs; //Get reference of array, in order to keep TMap updated
 
 	const int32 AvailableChairsCount = GetAvailableChairsCount(FlipAxis);
 
@@ -125,7 +120,7 @@ void UChairsManager::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector Spaw
 	int32 i = 0;
 	while (i < CurrChairs.Num() - 1) //Updating
 	{
-		UChair* ChairToUpdate = CurrChairs[i++];
+		UProceduralMeshComponent* ChairToUpdate = CurrChairs[i++];
 		if (!ChairToUpdate->IsVisible()) { continue; }
 
 		FixChairTransform(*ChairToUpdate, StartSpawnPoint, SpawnOffset, InitialRotation, EAxes::None);
@@ -150,13 +145,7 @@ void UChairsManager::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector Spaw
 
 void UChairsManager::SpawnChair(const EAxes FlipAxis)
 {
-	if (!ChairClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("ChairClass is NULL. Unable to spawn the chair!"));
-		return;
-	}
-
-	UChair* PooledChair = GetPooledChair(FlipAxis);
+	UProceduralMeshComponent* PooledChair = GetPooledChair(FlipAxis);
 
 	if (PooledChair)
 	{
@@ -165,7 +154,7 @@ void UChairsManager::SpawnChair(const EAxes FlipAxis)
 	}
 
 	//If there're any visible chairs, then spawn one.
-	UChair* ChairSpawned = NewObject<UChair>(this, ChairClass);
+	UProceduralMeshComponent* ChairSpawned = NewObject<UProceduralMeshComponent>(this, UProceduralMeshComponent::StaticClass());
 
 	if (!ChairSpawned)
 	{
@@ -174,19 +163,19 @@ void UChairsManager::SpawnChair(const EAxes FlipAxis)
 	}
 
 	//Build spawned chair and add it to Chairs array
-	ChairSpawned->SetupAttachment(Parent->GetRootComponent());
+	ChairSpawned->SetupAttachment(Parent);
 	ChairSpawned->RegisterComponent();
 	ChairSpawned->SetVisibility(true);
 
-	ChairSpawned->BuildMesh(ChairSeatSize, ChairBackSize, ChairLegSize);
+	ChairSpawned->CreateMeshSection(0, ChairMeshData.Vertices, ChairMeshData.Triangles, ChairMeshData.Normals, ChairMeshData.UVs, ChairMeshData.VertexColors, ChairMeshData.Tangents, true);
 	ChairsOnAxis[FlipAxis].Chairs.Add(ChairSpawned);
 }
 
 #pragma region Pooling
 
-UChair* UChairsManager::GetPooledChair(const EAxes FlipAxis) const
+UProceduralMeshComponent* UChairsManager::GetPooledChair(const EAxes FlipAxis) const
 {
-	TArray<UChair*> CurrChairs = ChairsOnAxis[FlipAxis].Chairs;
+	TArray<UProceduralMeshComponent*> CurrChairs = ChairsOnAxis[FlipAxis].Chairs;
 
 	for (int32 i = 0; i < CurrChairs.Num(); i++)
 	{
@@ -201,7 +190,7 @@ UChair* UChairsManager::GetPooledChair(const EAxes FlipAxis) const
 
 void UChairsManager::SetPooledChair(const EAxes FlipAxis)
 {
-	TArray<UChair*> &CurrChairs = ChairsOnAxis[FlipAxis].Chairs;
+	TArray<UProceduralMeshComponent*> &CurrChairs = ChairsOnAxis[FlipAxis].Chairs;
 
 	for (int32 i = 0; i < CurrChairs.Num(); i++)
 	{
@@ -215,7 +204,7 @@ void UChairsManager::SetPooledChair(const EAxes FlipAxis)
 
 int32 UChairsManager::GetAvailableChairsCount(const EAxes FlipAxis) const
 {
-	TArray<UChair*> CurrChairs = ChairsOnAxis[FlipAxis].Chairs;
+	TArray<UProceduralMeshComponent*> CurrChairs = ChairsOnAxis[FlipAxis].Chairs;
 	int32 AvailableChairsCount = 0;
 
 	for (int32 k = 0; k < CurrChairs.Num(); k++)
@@ -231,7 +220,7 @@ int32 UChairsManager::GetAvailableChairsCount(const EAxes FlipAxis) const
 
 #pragma endregion Pooling
 
-void UChairsManager::FixChairTransform(UChair &Chair, FVector StartSpawnPoint, FVector SpawnOffset, float Yaw, const EAxes FlipAxis) const
+void UChairsManager::FixChairTransform(UProceduralMeshComponent &Chair, FVector StartSpawnPoint, FVector SpawnOffset, float Yaw, const EAxes FlipAxis) const
 {
 	if (FlipAxis == EAxes::Y)
 	{

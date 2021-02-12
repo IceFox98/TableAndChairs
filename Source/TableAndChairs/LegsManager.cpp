@@ -2,44 +2,42 @@
 
 
 #include "LegsManager.h"
-#include "Leg.h"
+#include "DynamicMeshLibrary.h"
 
 // Sets default values for this component's properties
 ULegsManager::ULegsManager()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	LegSize = FVector(30.f, 30.f, 100.f);
 }
 
-// Called when the game starts
-void ULegsManager::BeginPlay()
+void ULegsManager::BuildLegs(USceneComponent* ParentComp)
 {
-	Super::BeginPlay();
-}
+	if (!ParentComp)
+	{
+		UE_LOG(LogTemp, Error, TEXT("The Parent Component is null. Unable to generate/update legs."));
+		return;
+	}
 
-// Called every frame
-void ULegsManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-
-void ULegsManager::BuildLegs()
-{
 	const int32 LegsCount = 4;
+
+	FProceduralMeshData LegMeshData;
+	UDynamicMeshLibrary::BuildCube(LegMeshData, LegSize, FVector::ZeroVector, FColor::Black);
 
 	//Spawn legs
 	for (int i = 0; i < LegsCount; i++)
 	{
-		ULeg* LegSpawned = NewObject<ULeg>(this, ULeg::StaticClass());
+		UProceduralMeshComponent* LegSpawned = NewObject<UProceduralMeshComponent>(this, UProceduralMeshComponent::StaticClass());
 
 		if (LegSpawned)
 		{
-			LegSpawned->SetupAttachment(GetOwner()->GetRootComponent());
+			LegSpawned->SetupAttachment(ParentComp);
 			LegSpawned->RegisterComponent();
-			LegSpawned->BuildMesh(FVector::ZeroVector, LegSize);
+
+			LegSpawned->CreateMeshSection(0, LegMeshData.Vertices, LegMeshData.Triangles, LegMeshData.Normals, LegMeshData.UVs, LegMeshData.VertexColors, LegMeshData.Tangents, true);
 
 			Legs.Add(LegSpawned);
 		}
@@ -68,7 +66,7 @@ void ULegsManager::UpdateLegsPosition(const FVector &ParentExtent)
 	//Update position
 	for (int i = 0; i < LegsPositions.Num(); i++)
 	{
-		ULeg* Leg = Legs[i];
+		UProceduralMeshComponent* Leg = Legs[i];
 
 		if (!Leg)
 		{

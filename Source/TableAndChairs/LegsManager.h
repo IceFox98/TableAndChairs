@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "LegsManager.generated.h"
 
-class ULeg;
+class UProceduralMeshComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TABLEANDCHAIRS_API ULegsManager : public UActorComponent
@@ -17,16 +17,10 @@ public:
 	// Sets default values for this component's properties
 	ULegsManager();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	/** Generates the legs component and adds them to the array */
-	void BuildLegs();
+	void BuildLegs(USceneComponent* ParentComp);
 
 	/**
 	 * Updates the legs position depending on the passed extent.
@@ -41,5 +35,5 @@ private:
 		FVector LegSize;
 
 	UPROPERTY(VisibleAnywhere)
-		TArray<ULeg*> Legs;
+		TArray<UProceduralMeshComponent*> Legs;
 };

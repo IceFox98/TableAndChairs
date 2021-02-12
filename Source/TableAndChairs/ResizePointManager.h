@@ -29,7 +29,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void InitializePoints(const FVector &Center, const FVector &Extent);
+	void InitializePoints(const FVector &ParentExtent, USceneComponent* ParentComp);
 
 	FResizePointMovedDelegate OnResizePointMovedDelegate;
 
@@ -37,6 +37,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		TArray<UResizePoint*> ResizePoints;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+		UStaticMesh* ResizePointMesh;
 
 	/**  */
 	APlayerController* PlayerController;

@@ -2,25 +2,26 @@
 
 
 #include "Table.h"
-#include "DynamicMeshComponent.h"
 #include "ResizePointManager.h"
 #include "LegsManager.h"
 #include "ChairsManager.h"
+#include "DynamicMeshLibrary.h"
 
 // Sets default values
 ATable::ATable()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
-	DynamicMeshComponent = CreateDefaultSubobject<UDynamicMeshComponent>("DynamicMesh");
-	SetRootComponent(DynamicMeshComponent);
+	ProceduralMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>("DynamicMesh");
+	SetRootComponent(ProceduralMeshComponent);
 
 	ResizePointManager = CreateDefaultSubobject<UResizePointManager>("ResizePointManager");
 	LegsManager = CreateDefaultSubobject<ULegsManager>("LegsManager");
 	ChairsManager = CreateDefaultSubobject<UChairsManager>("ChaisManager");
 
 	Size = FVector(400.f, 400.f, 20.f);
+	CurrentSize = Size;
 
 	MaxSize = FVector(1000.f, 1000.f, 20.f);
 	MinSize = FVector(200.f, 200.f, 20.f);
@@ -32,73 +33,68 @@ void ATable::BeginPlay()
 	Super::BeginPlay();
 
 	//Create table mesh
-	BuildMesh(FVector::ZeroVector, Size, false);
+	BuildMesh(GetActorLocation(), Size, false);
 
 	//Calculate table location
 	const FVector LegSize = LegsManager->GetLegSize();
 	const FVector PositionOffset = FVector(0, 0, LegSize.Z + (Size.Z * .5f));
 	SetActorLocation(GetActorLocation() + PositionOffset);
 
+	USceneComponent* const Root = GetRootComponent();
+
 	//Generate Resize Points
 	const FVector Extent = Size * .5f;
-	ResizePointManager->InitializePoints(GetActorLocation(), Extent);
+	ResizePointManager->InitializePoints(Extent, Root);
 
 	//Create legs
-	LegsManager->BuildLegs();
+	LegsManager->BuildLegs(Root);
 	LegsManager->UpdateLegsPosition(Extent);
 
 	//Create Chairs
-	ChairsManager->Initialize(LegSize, this);
+	ChairsManager->Initialize(LegSize, Root);
 	ChairsManager->UpdateChairs(Size);
-}
-
-// Called every frame
-void ATable::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 void ATable::BuildMesh(const FVector &Center, const FVector &MeshSize, const bool Update)
 {
-	DynamicMeshComponent->BuildCube(MeshSize, FVector::ZeroVector, FColor::Red);
+	FProceduralMeshData Data;
+	UDynamicMeshLibrary::BuildCube(Data, MeshSize, FVector::ZeroVector, FColor::Red);
 
 	if (Update)
 	{
-		DynamicMeshComponent->UpdateMesh();
+		ProceduralMeshComponent->UpdateMeshSection(0, Data.Vertices, Data.Normals, Data.UVs, Data.VertexColors, Data.Tangents);
 	}
 	else
 	{
-		DynamicMeshComponent->GenerateMesh();
+		ProceduralMeshComponent->CreateMeshSection(0, Data.Vertices, Data.Triangles, Data.Normals, Data.UVs, Data.VertexColors, Data.Tangents, true);
 	}
 
 	SetActorLocation(Center);
 }
 
-FVector ATable::ResizeMesh(const FVector &Direction, const FVector &DeltaSize)
+FVector ATable::ResizeMesh(const FVector &Direction, const FVector &NewExtent)
 {
+	const FVector DeltaSize = NewExtent.GetAbs() - (CurrentSize * .5f);
+
 	if (DeltaSize != FVector::ZeroVector)
 	{
 		//Move the Actor by half of the movement
-		FVector DeltaPosition = (DeltaSize) * .5f;
+		FVector DeltaPosition = (DeltaSize * Direction) * .5f;
 		DeltaPosition.Z = 0;
 		const FVector NewCenter = GetActorLocation() + DeltaPosition;
 
 		//Get new size
-		const FVector CurrentSize = DynamicMeshComponent->Bounds.GetBox().GetSize();
-		FVector NewSize = (CurrentSize + (DeltaSize * Direction));
+		FVector NewSize = CurrentSize + DeltaSize;
 		NewSize.Z = Size.Z;
 
-		DynamicMeshComponent->ResetBuffers();
 		BuildMesh(NewCenter, NewSize, true);
 
+		CurrentSize = NewSize;
 		LegsManager->UpdateLegsPosition(NewSize * .5f);
 		ChairsManager->UpdateChairs(NewSize);
-
 	}
 
-	//Return the center
-	return GetActorLocation();
+	return DeltaSize;
 }
 
 FVector ATable::ClampSize(const FVector &Direction, const FVector &SizeToCheck)
@@ -115,7 +111,7 @@ FVector ATable::ClampSize(const FVector &Direction, const FVector &SizeToCheck)
 	float DiffY = FMath::Abs(SizeToCheck.Y - ActorLocation.Y);
 
 	//When you exceed (with the mouse) the min size, re-set the abs difference so that it clamps automatically
-	if (FMath::Sign(SizeToCheck.X - ActorLocation.X) != FMath::Sign(Direction.X)) 
+	if (FMath::Sign(SizeToCheck.X - ActorLocation.X) != FMath::Sign(Direction.X))
 	{
 		DiffX = MinSizeHalf.X - 1.f; //Just for clamp
 	}

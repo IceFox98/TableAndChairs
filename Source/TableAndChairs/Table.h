@@ -7,11 +7,6 @@
 #include "ResizableObject.h"
 #include "Table.generated.h"
 
-class UDynamicMeshComponent;
-class UResizePointManager;
-class ULegsManager;
-class UChairsManager;
-
 UCLASS()
 class TABLEANDCHAIRS_API ATable : public AActor, public IResizableObject
 {
@@ -26,8 +21,6 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 	/**
 	 * Creates a table with the size indicated and moves the actor at 'Center' position.
@@ -52,7 +45,7 @@ public:
 	 * Resizes the mesh based on the delta and move the actor by half delta
 	 * @param Direction - The direction of the resizing (Unit vector)
 	 */
-	virtual FVector ResizeMesh(const FVector &Direction, const FVector &DeltaSize) override;
+	virtual FVector ResizeMesh(const FVector &Direction, const FVector &NewExtent) override;
 
 	/**
 	 * Clamps the size between a minimum and maximum value, indicated by the Actor.
@@ -64,15 +57,18 @@ public:
 
 private:
 
-	UPROPERTY(VisibleAnywhere)
-		UDynamicMeshComponent* DynamicMeshComponent;
+	/** The current size of the mesh */
+	FVector CurrentSize;
 
 	UPROPERTY(VisibleAnywhere)
-		UResizePointManager* ResizePointManager;
+		class UProceduralMeshComponent* ProceduralMeshComponent;
 
 	UPROPERTY(VisibleAnywhere)
-		ULegsManager* LegsManager;
+		class UResizePointManager* ResizePointManager;
 
 	UPROPERTY(VisibleAnywhere)
-		UChairsManager* ChairsManager;
+		class ULegsManager* LegsManager;
+
+	UPROPERTY(VisibleAnywhere)
+		class UChairsManager* ChairsManager;
 };

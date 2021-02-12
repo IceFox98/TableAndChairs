@@ -4,8 +4,11 @@
 #include "PlayerPawn.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
-#include "Table.h"
+#include "TableAndChairsGameModeBase.h"
 #include "EngineUtils.h"
+#include "ResizableObject.h"
+#include "Kismet/GameplayStatics.h"
+#include "ProceduralMeshComponent.h"
 
 APlayerPawn::APlayerPawn()
 {
@@ -47,7 +50,7 @@ void APlayerPawn::BeginPlay()
 		PlayerController->bShowMouseCursor = true;
 	}
 
-	//GameMode = Cast<ATableAndChairsGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+	GameMode = Cast<ATableAndChairsGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
 }
 
 void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -75,7 +78,71 @@ void APlayerPawn::Zoom(float InputAxis)
 
 void APlayerPawn::SpawnNewMesh()
 {
+	if (!PlayerController)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerController is NULL. Unable to spawn new mesh."));
+		return;
+	}
 
+	if (!GameMode)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GameMode is NULL. Unable to spawn new mesh."));
+		return;
+	}
+
+	if (!GameMode->ActorToSpawn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ActorToSpawn is NULL. Unable to spawn it."));
+		return;
+	}
+
+	FHitResult HitResult;
+	bool bHasHit = PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, HitResult);
+
+	if (bHasHit)
+	{
+		bool bCanSpawn = true;
+
+		FVector SpawnPoint = HitResult.ImpactPoint;
+
+		//Create a Box of the table that should be spawned
+		const float OffsetBetweenTables = 100.f;
+		//const FVector TableExtent = (GameMode->TableSize * .5f) + OffsetBetweenTables;
+		const FVector TableExtent = (FVector(400, 400, 20) * .5f) + OffsetBetweenTables;
+
+		const FBox TableBox(SpawnPoint - TableExtent, SpawnPoint + TableExtent);
+
+		TArray<AActor*> ResizableActors;
+		UGameplayStatics::GetAllActorsWithInterface(GetWorld(), UResizableObject::StaticClass(), ResizableActors);
+
+		for (AActor* Actor : ResizableActors)
+		{
+			//Get resizable object only
+			IResizableObject* ResizableObject = Cast<IResizableObject>(Actor);
+
+			if (!ResizableObject)
+			{
+				UE_LOG(LogTemp, Error, TEXT("This Object can't be resized."));
+				return;
+			}
+
+			UProceduralMeshComponent* Mesh = Cast<UProceduralMeshComponent>(Actor->GetComponentByClass(UProceduralMeshComponent::StaticClass()));
+
+			bCanSpawn = !Mesh->Bounds.GetBox().IntersectXY(TableBox);
+
+			if (!bCanSpawn)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Can't spawn"));
+				return;
+			}
+		}
+
+		if (bCanSpawn) //Spawn at mouse position
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SpawnPoint: %s"), *SpawnPoint.ToString());
+			GetWorld()->SpawnActor<AActor>(GameMode->ActorToSpawn, SpawnPoint, FRotator::ZeroRotator);
+		}
+	}
 }
 
 void APlayerPawn::RemoveMesh()

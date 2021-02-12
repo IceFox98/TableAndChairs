@@ -17,11 +17,10 @@ class TABLEANDCHAIRS_API IResizableObject
 {
 	GENERATED_BODY()
 
-		// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
 	UFUNCTION()
-		virtual FVector ResizeMesh(const FVector &Direction, const FVector &DeltaSize) { return FVector::ZeroVector; };
+		virtual FVector ResizeMesh(const FVector &Direction, const FVector &NewExtent) { return FVector::ZeroVector; };
 
 	UFUNCTION()
 		virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) { return FVector::ZeroVector; };

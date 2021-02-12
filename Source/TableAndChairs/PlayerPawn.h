@@ -26,9 +26,9 @@ protected:
 
 	APlayerController* PlayerController;
 
-	//ATableAndChairsGameModeBase* GameMode;
-
 private:
+
+	class ATableAndChairsGameModeBase* GameMode;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 		UCameraComponent* PlayerCameraComponent;

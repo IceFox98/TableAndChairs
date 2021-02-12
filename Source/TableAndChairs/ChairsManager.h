@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "DynamicMeshLibrary.h"
 #include "ChairsManager.generated.h"
 
-class UChair;
 
 UENUM()
 enum class EAxes : uint8
@@ -23,11 +23,11 @@ struct FChairs
 	GENERATED_BODY()
 
 		UPROPERTY(VisibleAnywhere)
-		TArray<UChair*> Chairs;
+		TArray<UProceduralMeshComponent*> Chairs;
 
 	FChairs()
 	{
-		Chairs = TArray<UChair*>();
+		Chairs = TArray<UProceduralMeshComponent*>();
 	}
 };
 
@@ -40,20 +40,14 @@ public:
 	// Sets default values for this component's properties
 	UChairsManager();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	/**
 	 * Initializes some member variables to calculate chairs' position.
 	 * @param MeshLegSize - The size of the parent leg
 	 * @param ParentActor - The Actor whose chairs will be attached to
 	 */
-	void Initialize(const FVector &MeshLegSize, AActor* ParentActor);
+	void Initialize(const FVector &MeshLegSize, USceneComponent* ParentComp);
 
 	/** Updates the chairs' position depending on the size of the parent mesh */
 	void UpdateChairs(const FVector &MeshSize);
@@ -68,9 +62,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 		FVector ChairLegSize;
 
-	/** The blueprint of Chair */
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<UChair> ChairClass;
+	///** The blueprint of Chair */
+	//UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	//	TSubclassOf<UChair> ChairClass;
 
 	/** Contains chairs divided by which axis has been flipped */
 	UPROPERTY(VisibleAnywhere)
@@ -91,7 +85,9 @@ private:
 	float ChairOffsetZ;
 
 	FVector ParentLegSize;
-	AActor* Parent;
+	USceneComponent* Parent;
+
+	FProceduralMeshData ChairMeshData;
 
 	/**
 	 * Calculates the remaining space between the whole chairs length (offset included) and table length.
@@ -120,7 +116,7 @@ private:
 	 * Searches for an available chair (which is visible in game) and returns it.
 	 * If it doesn't find any, returns nullptr.
 	 */
-	UChair* GetPooledChair(const EAxes FlipAxis) const;
+	UProceduralMeshComponent* GetPooledChair(const EAxes FlipAxis) const;
 
 	/** Sets as non-visible the first chair (on the indicated axis) which is visible. */
 	void SetPooledChair(const EAxes FlipAxis);
@@ -136,5 +132,5 @@ private:
 	 * @param Yaw - The rotation on Z Axis you want to apply to Chair
 	 * @param FlipAxis - The axis of the SpawnOffset point which will be multiplied by -1
 	 */
-	void FixChairTransform(UChair &Chair, FVector StartSpawnPoint, FVector SpawnOffset, float Yaw, const EAxes FlipAxis) const;
+	void FixChairTransform(UProceduralMeshComponent &Chair, FVector StartSpawnPoint, FVector SpawnOffset, float Yaw, const EAxes FlipAxis) const;
 };

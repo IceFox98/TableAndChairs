@@ -4,7 +4,6 @@
 #include "ResizePointManager.h"
 #include "ResizePoint.h"
 #include "ResizableObject.h"
-#include "PhysicsEngine/PhysicsHandleComponent.h"
 
 // Sets default values for this component's properties
 UResizePointManager::UResizePointManager()
@@ -85,13 +84,25 @@ void UResizePointManager::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	}
 }
 
-void UResizePointManager::InitializePoints(const FVector &Center, const FVector &Extent)
+void UResizePointManager::InitializePoints(const FVector &ParentExtent, USceneComponent* ParentComp)
 {
+	if (!ResizePointMesh)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ResizePointMesh is NULL."));
+		return;
+	}
+
+	if (!ParentComp)
+	{
+		UE_LOG(LogTemp, Error, TEXT("The Parent Component is null. Unable to generate/update ResizePoints."));
+		return;
+	}
+
 	const TArray<FVector> Positions = {
-		FVector(-Extent.X, -Extent.Y, Extent.Z),
-		FVector(+Extent.X, -Extent.Y, Extent.Z),
-		FVector(-Extent.X, +Extent.Y, Extent.Z),
-		FVector(+Extent.X, +Extent.Y, Extent.Z),
+		FVector(-ParentExtent.X, -ParentExtent.Y, ParentExtent.Z),
+		FVector(+ParentExtent.X, -ParentExtent.Y, ParentExtent.Z),
+		FVector(-ParentExtent.X, +ParentExtent.Y, ParentExtent.Z),
+		FVector(+ParentExtent.X, +ParentExtent.Y, ParentExtent.Z),
 	};
 
 	//Create Resize Points and set their start position
@@ -99,7 +110,14 @@ void UResizePointManager::InitializePoints(const FVector &Center, const FVector 
 	{
 		UResizePoint* ResizePoint = NewObject<UResizePoint>(this, UResizePoint::StaticClass());
 
-		ResizePoint->SetupAttachment(GetOwner()->GetRootComponent());
+		if (!ResizePoint) 
+		{
+			continue;
+		}
+
+		ResizePoint->SetStaticMesh(ResizePointMesh);
+		ResizePoint->SetRelativeScale3D(FVector(0.4, 0.4, 0.4));
+		ResizePoint->SetupAttachment(ParentComp);
 		ResizePoint->RegisterComponent();
 		ResizePoint->SetRelativeLocation(Positions[i]);
 
@@ -174,10 +192,15 @@ void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoi
 	const FVector Direction(DirectionX, DirectionY, 1);
 
 	const FVector ClampedPosition = ResizableObject->ClampSize(Direction, CheckedPosition);
-	const FVector DeltaSize = ClampedPosition - ResizePointRef->GetComponentLocation();
+	const FVector NewExtent = ClampedPosition - GetOwner()->GetActorLocation();
 
 	//Resize Mesh and get the new center
-	const FVector NewCenter = ResizableObject->ResizeMesh(Direction, DeltaSize);
+	const FVector DeltaSize = ResizableObject->ResizeMesh(Direction, NewExtent);
+
+	if (DeltaSize == FVector::ZeroVector) //If we aren't changing the size, we can avoid to update ResizePoint positions.
+	{
+		return;
+	}
 
 	//Set the ResizePoints position
 	for (int32 i = 0; i < ResizePoints.Num(); i++)
@@ -195,7 +218,7 @@ void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoi
 		const float CurrYSign = FMath::Sign(CurrentResizePointPosition.Y);
 
 		//The other half of the movement was applied by the parent actor (ResizePoints are child of it)
-		FVector DeltaPosition = DeltaSize * .5f;
+		FVector DeltaPosition = (DeltaSize * Direction) * .5f;
 
 		if (DirectionX != CurrXSign)
 		{
