@@ -132,3 +132,8 @@ FVector ATable::ClampSize(const FVector &Direction, const FVector &SizeToCheck)
 
 	return ReturnSize;
 }
+
+FVector ATable::GetMeshSize()
+{
+	return Size;
+}

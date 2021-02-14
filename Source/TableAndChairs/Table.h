@@ -55,6 +55,8 @@ public:
 	 */
 	virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) override;
 
+	virtual FVector GetMeshSize() override;
+
 private:
 
 	/** The current size of the mesh */

@@ -101,32 +101,33 @@ void APlayerPawn::SpawnNewMesh()
 
 	if (bHasHit)
 	{
-		bool bCanSpawn = true;
+		IResizableObject* ResizableObject = GameMode->ActorToSpawn ? Cast<IResizableObject>(GameMode->ActorToSpawn->GetDefaultObject()) : nullptr;
+
+		//Get resizable object only
+		if (!ResizableObject)
+		{
+			UE_LOG(LogTemp, Error, TEXT("This Object can't be spawned."));
+			return;
+		}
 
 		FVector SpawnPoint = HitResult.ImpactPoint;
 
 		//Create a Box of the table that should be spawned
 		const float OffsetBetweenTables = 100.f;
-		//const FVector TableExtent = (GameMode->TableSize * .5f) + OffsetBetweenTables;
-		const FVector TableExtent = (FVector(400, 400, 20) * .5f) + OffsetBetweenTables;
+		const FVector TableExtent = (ResizableObject->GetMeshSize() * .5f) + OffsetBetweenTables;
 
 		const FBox TableBox(SpawnPoint - TableExtent, SpawnPoint + TableExtent);
 
-		TArray<AActor*> ResizableActors;
-		UGameplayStatics::GetAllActorsWithInterface(GetWorld(), UResizableObject::StaticClass(), ResizableActors);
+		bool bCanSpawn = true;
 
-		for (AActor* Actor : ResizableActors)
+		for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 		{
-			//Get resizable object only
-			IResizableObject* ResizableObject = Cast<IResizableObject>(Actor);
+			UProceduralMeshComponent* Mesh = Cast<UProceduralMeshComponent>(ActorItr->GetComponentByClass(UProceduralMeshComponent::StaticClass()));
 
-			if (!ResizableObject)
+			if (!Mesh) //Ignoring Actor like Floor, Walls etc...
 			{
-				UE_LOG(LogTemp, Error, TEXT("This Object can't be resized."));
-				return;
+				continue;
 			}
-
-			UProceduralMeshComponent* Mesh = Cast<UProceduralMeshComponent>(Actor->GetComponentByClass(UProceduralMeshComponent::StaticClass()));
 
 			bCanSpawn = !Mesh->Bounds.GetBox().IntersectXY(TableBox);
 
@@ -147,5 +148,25 @@ void APlayerPawn::SpawnNewMesh()
 
 void APlayerPawn::RemoveMesh()
 {
+	if (!PlayerController)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerController is NULL. Unable to remove meshes."));
+		return;
+	}
 
+	FHitResult HitResult;
+	bool bHasHit = PlayerController->GetHitResultUnderCursor(ECC_Visibility, true, HitResult);
+
+	if (bHasHit)
+	{
+		AActor* ActorHit = HitResult.GetActor();
+
+		const bool bCanBeRemoved = ActorHit->Implements<UResizableObject>();
+
+		if (bCanBeRemoved)
+		{
+			//TODO: Implements Object Pooling
+			ActorHit->Destroy();
+		}
+	}
 }

@@ -24,4 +24,7 @@ public:
 
 	UFUNCTION()
 		virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) { return FVector::ZeroVector; };
+
+	UFUNCTION()
+		virtual FVector GetMeshSize() { return FVector::ZeroVector; };
 };
