@@ -194,6 +194,13 @@ void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoi
 	const FVector ClampedPosition = ResizableObject->ClampSize(Direction, CheckedPosition);
 	const FVector NewExtent = ClampedPosition - GetOwner()->GetActorLocation();
 
+	const bool DoesIntersect = ResizableObject->DoesIntersect(Direction, NewExtent);
+
+	if (DoesIntersect) //If, during resizing, you hit another actor, the resize stops
+	{
+		return;
+	}
+
 	//Resize Mesh and get the new center
 	const FVector DeltaSize = ResizableObject->ResizeMesh(Direction, NewExtent);
 

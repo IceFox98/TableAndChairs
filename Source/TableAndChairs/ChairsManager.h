@@ -62,10 +62,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 		FVector ChairLegSize;
 
-	///** The blueprint of Chair */
-	//UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	//	TSubclassOf<UChair> ChairClass;
-
 	/** Contains chairs divided by which axis has been flipped */
 	UPROPERTY(VisibleAnywhere)
 		TMap<EAxes, FChairs> ChairsOnAxis;

@@ -55,6 +55,13 @@ public:
 	 */
 	virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) override;
 
+	/**
+	 * Given the direction and the extent of the resizing, creates an FBox using those 
+	 * values and checkes if it intersects with other actors.
+	 */
+	virtual bool DoesIntersect(const FVector &Direction, const FVector &Extent) override;;
+
+	/** Returns the starting size of the table */
 	virtual FVector GetMeshSize() override;
 
 private:

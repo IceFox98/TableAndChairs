@@ -26,5 +26,8 @@ public:
 		virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) { return FVector::ZeroVector; };
 
 	UFUNCTION()
+		virtual bool DoesIntersect(const FVector &Direction, const FVector &Extent) { return true; };
+
+	UFUNCTION()
 		virtual FVector GetMeshSize() { return FVector::ZeroVector; };
 };

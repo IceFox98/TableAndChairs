@@ -18,8 +18,6 @@ void UDynamicMeshLibrary::BuildQuad(FProceduralMeshData &OutMeshData, const FVec
 	OutMeshData.UVs.AddUninitialized(VertexCount);
 	OutMeshData.Tangents.AddUninitialized(VertexCount);
 
-	//OutMeshData.Vertices.iter
-
 	const int32 Index1 = VertexIndex++;
 	const int32 Index2 = VertexIndex++;
 	const int32 Index3 = VertexIndex++;

@@ -27,6 +27,7 @@ public:
 	 */
 	void UpdateLegsPosition(const FVector &ParentExtent);
 
+	/** Returns the starting size of the leg */
 	FVector GetLegSize();
 
 private:

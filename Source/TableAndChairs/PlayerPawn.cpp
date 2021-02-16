@@ -101,7 +101,7 @@ void APlayerPawn::SpawnNewMesh()
 
 	if (bHasHit)
 	{
-		IResizableObject* ResizableObject = GameMode->ActorToSpawn ? Cast<IResizableObject>(GameMode->ActorToSpawn->GetDefaultObject()) : nullptr;
+		IResizableObject* ResizableObject = Cast<IResizableObject>(GameMode->ActorToSpawn->GetDefaultObject());
 
 		//Get resizable object only
 		if (!ResizableObject)
@@ -133,14 +133,13 @@ void APlayerPawn::SpawnNewMesh()
 
 			if (!bCanSpawn)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Can't spawn"));
+				UE_LOG(LogTemp, Error, TEXT("Can't spawn. The Actor intersects with another one."));
 				return;
 			}
 		}
 
 		if (bCanSpawn) //Spawn at mouse position
 		{
-			UE_LOG(LogTemp, Warning, TEXT("SpawnPoint: %s"), *SpawnPoint.ToString());
 			GetWorld()->SpawnActor<AActor>(GameMode->ActorToSpawn, SpawnPoint, FRotator::ZeroRotator);
 		}
 	}

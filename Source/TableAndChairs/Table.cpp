@@ -6,6 +6,7 @@
 #include "LegsManager.h"
 #include "ChairsManager.h"
 #include "DynamicMeshLibrary.h"
+#include "EngineUtils.h"
 
 // Sets default values
 ATable::ATable()
@@ -131,6 +132,44 @@ FVector ATable::ClampSize(const FVector &Direction, const FVector &SizeToCheck)
 	}
 
 	return ReturnSize;
+}
+
+bool ATable::DoesIntersect(const FVector &Direction, const FVector &Extent)
+{
+	const FVector BoxExtent = Extent.GetAbs();
+	const FVector DeltaSize = BoxExtent - (CurrentSize * .5f);
+
+	if (DeltaSize != FVector::ZeroVector)
+	{
+		//TODO: Duplicated code
+		FVector DeltaPosition = (DeltaSize * Direction) * .5f;
+		DeltaPosition.Z = 0;
+		const FVector Center = GetActorLocation() + DeltaPosition;
+
+		//Simulate FBox of the resized table 
+		const FBox TableBox(Center - BoxExtent, Center + BoxExtent);
+
+		for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+		{
+			UProceduralMeshComponent* Mesh = Cast<UProceduralMeshComponent>(ActorItr->GetComponentByClass(UProceduralMeshComponent::StaticClass()));
+
+			//TODO: Pointers compare?
+			if (!Mesh || ActorItr->GetName() == this->GetName()) //Ignoring this Actor and others like Floor, Walls, Sky etc...
+			{
+				continue;
+			}
+
+			const bool bIntersect = Mesh->Bounds.GetBox().IntersectXY(TableBox);
+
+			if (bIntersect)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("The Table intersects with another actor. %s"), *ActorItr->GetName());
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 FVector ATable::GetMeshSize()
