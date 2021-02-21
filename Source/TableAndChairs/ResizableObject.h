@@ -23,11 +23,11 @@ public:
 		virtual FVector ResizeMesh(const FVector &Direction, const FVector &NewExtent) { return FVector::ZeroVector; };
 
 	UFUNCTION()
-		virtual FVector ClampSize(const FVector &Direction, const FVector &SizeToCheck) { return FVector::ZeroVector; };
+		virtual void ClampSize(const FVector &Direction, FVector &OutSizeToClamp) const { return; };
 
 	UFUNCTION()
 		virtual bool DoesIntersect(const FVector &Direction, const FVector &Extent) { return true; };
 
 	UFUNCTION()
-		virtual FVector GetMeshSize() { return FVector::ZeroVector; };
+		virtual FVector GetMeshSize() const { return FVector::ZeroVector; };
 };

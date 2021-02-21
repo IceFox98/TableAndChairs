@@ -7,12 +7,12 @@
 #include "ResizePoint.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TABLEANDCHAIRS_API UResizePoint : public UStaticMeshComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this component's properties
 	UResizePoint();
 
@@ -20,13 +20,15 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	/**
 	 * Checks the passed position and calls the delegate OnResizePointMovedDelegate
+	 * @param NewPosition - The position that will be checked and passed into the delegate
 	 */
-	void CheckPosition(const FVector &NewPosition);
+	void CheckPosition(FVector &NewPosition) const;
 
 private:
 
-	class UResizePointManager* ResizePointManager;
+	UPROPERTY()
+		class UResizePointManager* ResizePointManager;
 };

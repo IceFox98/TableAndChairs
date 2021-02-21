@@ -10,7 +10,7 @@ void ATableAndChairsGameModeBase::BeginPlay()
 	SpawnMesh();
 }
 
-void ATableAndChairsGameModeBase::SpawnMesh()
+void ATableAndChairsGameModeBase::SpawnMesh() const
 {
 	//Pointer cannot be reassigned, but World can still be modified
 	UWorld* const World = GetWorld();

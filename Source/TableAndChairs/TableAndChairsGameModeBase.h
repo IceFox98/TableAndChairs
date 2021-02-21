@@ -17,8 +17,8 @@ class TABLEANDCHAIRS_API ATableAndChairsGameModeBase : public AGameModeBase
 protected:
 	virtual void BeginPlay() override;
 
-	/** Spawns a DynamicMesh at Zero position */
-	void SpawnMesh();
+	/** Spawns the mesh at Zero position */
+	void SpawnMesh() const;
 
 public:
 

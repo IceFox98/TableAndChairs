@@ -19,22 +19,27 @@ public:
 
 public:	
 
-	/** Generates the legs component and adds them to the array */
+	/**
+	 * Generates the legs component and adds them to the array.
+	 * @param ParentComp - The Component whose legs will be attached to
+	 */
 	void BuildLegs(USceneComponent* ParentComp);
 
 	/**
 	 * Updates the legs position depending on the passed extent.
+	 * @param ParentExtent - The extent of the parent
 	 */
 	void UpdateLegsPosition(const FVector &ParentExtent);
 
 	/** Returns the starting size of the leg */
-	FVector GetLegSize();
+	FVector GetLegSize() const;
 
 private:
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 		FVector LegSize;
 
+	/** The Array which contains each spawned legs */
 	UPROPERTY(VisibleAnywhere)
 		TArray<UProceduralMeshComponent*> Legs;
 };

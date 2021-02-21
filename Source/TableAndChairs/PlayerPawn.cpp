@@ -35,7 +35,7 @@ APlayerPawn::APlayerPawn()
 	PlayerCameraComponent->bUsePawnControlRotation = false; // This lets the camera looks at the origin of the spring arm, following its rotation
 
 	ZoomSpeed = 20.f;
-	ZoomMinValue = 400.f;
+	ZoomMinValue = 200.f;
 	ZoomMaxValue = 1200.f;
 }
 
@@ -63,14 +63,14 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("RemoveMesh", IE_Pressed, this, &APlayerPawn::RemoveMesh);
 }
 
-void APlayerPawn::Zoom(float InputAxis)
+void APlayerPawn::Zoom(float ZoomDirection)
 {
-	if (InputAxis == 0.f || !PlayerSpringArm)
+	if (ZoomDirection == 0.f || !PlayerSpringArm)
 	{
 		return;
 	}
 
-	const float ZoomAmount = PlayerSpringArm->TargetArmLength += (InputAxis * ZoomSpeed);
+	const float ZoomAmount = PlayerSpringArm->TargetArmLength += (ZoomDirection * ZoomSpeed);
 	const float ZoomAmountClamped = FMath::Clamp(ZoomAmount, ZoomMinValue, ZoomMaxValue);
 
 	PlayerSpringArm->TargetArmLength = ZoomAmountClamped;
@@ -116,31 +116,21 @@ void APlayerPawn::SpawnNewMesh()
 		const float OffsetBetweenTables = 100.f;
 		const FVector TableExtent = (ResizableObject->GetMeshSize() * .5f) + OffsetBetweenTables;
 
-		const FBox TableBox(SpawnPoint - TableExtent, SpawnPoint + TableExtent);
+		TArray<AActor*> OverlappedActors;
+		TArray<AActor*> ActorsToIgnore = { HitResult.GetActor() }; //Ignore floor
+		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 
-		bool bCanSpawn = true;
+		const bool bDoesIntersect = UKismetSystemLibrary::BoxOverlapActors(GetWorld(), SpawnPoint, TableExtent, ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
 
-		for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
-		{
-			UProceduralMeshComponent* Mesh = Cast<UProceduralMeshComponent>(ActorItr->GetComponentByClass(UProceduralMeshComponent::StaticClass()));
-
-			if (!Mesh) //Ignoring Actor like Floor, Walls etc...
-			{
-				continue;
-			}
-
-			bCanSpawn = !Mesh->Bounds.GetBox().IntersectXY(TableBox);
-
-			if (!bCanSpawn)
-			{
-				UE_LOG(LogTemp, Error, TEXT("Can't spawn. The Actor intersects with another one."));
-				return;
-			}
-		}
-
-		if (bCanSpawn) //Spawn at mouse position
+		if (!bDoesIntersect) //If everything is ok, i can spawn
 		{
 			GetWorld()->SpawnActor<AActor>(GameMode->ActorToSpawn, SpawnPoint, FRotator::ZeroRotator);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Can't spawn. The Actor intersects with another one."));
 		}
 	}
 }
@@ -164,7 +154,7 @@ void APlayerPawn::RemoveMesh()
 
 		if (bCanBeRemoved)
 		{
-			//TODO: Implements Object Pooling
+			//TODO: Implements Object Pooling (?)
 			ActorHit->Destroy();
 		}
 	}

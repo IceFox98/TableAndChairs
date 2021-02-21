@@ -6,9 +6,6 @@
 #include "GameFramework/DefaultPawn.h"
 #include "PlayerPawn.generated.h"
 
-class UCameraComponent;
-class USpringArmComponent;
-
 UCLASS()
 class TABLEANDCHAIRS_API APlayerPawn : public ADefaultPawn
 {
@@ -24,17 +21,19 @@ protected:
 
 	virtual void SetupPlayerInputComponent(UInputComponent* InInputComponent) override;
 
-	APlayerController* PlayerController;
+	UPROPERTY()
+		APlayerController* PlayerController;
 
 private:
 
-	class ATableAndChairsGameModeBase* GameMode;
+	UPROPERTY()
+		class ATableAndChairsGameModeBase* GameMode;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
-		UCameraComponent* PlayerCameraComponent;
+		class UCameraComponent* PlayerCameraComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
-		USpringArmComponent* PlayerSpringArm;
+		class USpringArmComponent* PlayerSpringArm;
 
 	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		float ZoomSpeed;
@@ -47,8 +46,11 @@ private:
 	UPROPERTY(EditAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		float ZoomMaxValue;
 
-	/** Increases/Decreases the length of the Spring Arm */
-	void Zoom(float InputAxis);
+	/**
+	 * Increases/Decreases the length of the Spring Arm.
+	 * @param ZoomDirection - The direction of the zoom
+	 */
+	void Zoom(float ZoomDirection);
 
 	/** Generates a new Table only if there's enough available space */
 	void SpawnNewMesh();

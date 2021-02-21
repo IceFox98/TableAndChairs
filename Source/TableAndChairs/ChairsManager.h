@@ -31,28 +31,35 @@ struct FChairs
 	}
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TABLEANDCHAIRS_API UChairsManager : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this component's properties
 	UChairsManager();
 
-public:	
+public:
 
 	/**
 	 * Initializes some member variables to calculate chairs' position.
 	 * @param MeshLegSize - The size of the parent leg
-	 * @param ParentActor - The Actor whose chairs will be attached to
+	 * @param ParentComp - The Component whose chairs will be attached to
 	 */
 	void Initialize(const FVector &MeshLegSize, USceneComponent* ParentComp);
 
-	/** Updates the chairs' position depending on the size of the parent mesh */
+	/**
+	 * Updates the chairs' position depending on the size of the parent mesh
+	 * @param MeshSize - The size of the parent mesh
+	 */
 	void UpdateChairs(const FVector &MeshSize);
-		
+
+	/** Returns the starting size of the chair's seat */
+	FVector GetChairSeatSize() const;
+
 private:
+
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 		FVector ChairSeatSize;
 
@@ -80,9 +87,10 @@ private:
 	/** How far chair is form the bottom side of the table */
 	float ChairOffsetZ;
 
-	FVector ParentLegSize;
-	USceneComponent* Parent;
+	UPROPERTY()
+		USceneComponent* Parent;
 
+	FVector ParentLegSize;
 	FProceduralMeshData ChairMeshData;
 
 	/**
@@ -95,7 +103,7 @@ private:
 
 	/**
 	 * Creates or deletes chairs and updates their position according to table size.
-	 * @param StartSpawnPoint -
+	 * @param StartSpawnPoint - The position where the first chair will be spawned. This will be modified.
 	 * @param SpawnOffset - The offset that will be added to the StartSpawnPoint
 	 * @param ChairsPerSide - The number of chairs for each opposite table's side
 	 * @param TotalChairLength - The length of the chair, offset included
@@ -104,26 +112,34 @@ private:
 	void CalculateChairsOfAxis(FVector StartSpawnPoint, FVector SpawnOffset, const int ChairsPerSide, const float TotalChairLength, const EAxes FlipAxis);
 
 	/**
-	 * Spawns one chairs for each side of table (only the opposite ones)
+	 * Spawns one chairs in the indicated FlipAxis for each side of table (only the opposite ones)
+	 * @param FlipAxis - The axis to which the chairs that were turned from it correspond
 	 */
 	void SpawnChair(const EAxes FlipAxis);
 
 	/**
-	 * Searches for an available chair (which is visible in game) and returns it.
+	 * Searches for an available chair on the FlipAxis (which is visible in game) and returns it.
 	 * If it doesn't find any, returns nullptr.
+	 * @param FlipAxis - The axis to which the chairs that were turned from it correspond
 	 */
 	UProceduralMeshComponent* GetPooledChair(const EAxes FlipAxis) const;
 
-	/** Sets as non-visible the first chair (on the indicated axis) which is visible. */
+	/**
+	 * Sets as non-visible the first chair (on the indicated axis) which is visible.
+	 * @param FlipAxis - The axis to which the chairs that were turned from it correspond
+	 */
 	void SetPooledChair(const EAxes FlipAxis);
 
-	/** Returns the total count of visible chairs of the indicated axis */
+	/**
+	 * Returns the total count of visible chairs of the indicated axis.
+	 * @param FlipAxis - The axis to which the chairs that were turned from it correspond
+	 */
 	int32 GetAvailableChairsCount(const EAxes FlipAxis) const;
 
 	/**
 	 * Updates the chair's transform and, if specified, flips its offset according to indicated axis.
-	 * @param Chair - The Chair actor you want to update
-	 * @param StartSpawnPoint -
+	 * @param Chair - The Chair component you want to update
+	 * @param StartSpawnPoint - The starting position of the chair, the SpawnOffset will be added to it
 	 * @param SpawnOffset - The offset that will be added to the StartSpawnPoint
 	 * @param Yaw - The rotation on Z Axis you want to apply to Chair
 	 * @param FlipAxis - The axis of the SpawnOffset point which will be multiplied by -1

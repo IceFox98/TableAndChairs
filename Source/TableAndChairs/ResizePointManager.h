@@ -10,7 +10,7 @@
 
 class UResizePoint;
 
-DECLARE_DELEGATE_ThreeParams(FResizePointMovedDelegate, const bool, const UResizePoint*, const FVector&)
+DECLARE_DELEGATE_ThreeParams(FResizePointMovedDelegate, const bool, const UResizePoint*, FVector&)
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TABLEANDCHAIRS_API UResizePointManager : public UActorComponent
@@ -29,6 +29,11 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	/**
+	 * Spawns the ResizePoint at the corner of the ParentExtent
+	 * @param ParentExtent - The extent of the parent component
+	 * @param ParentComp - The Component whose ResizePoints will be attached to
+	 */
 	void InitializePoints(const FVector &ParentExtent, USceneComponent* ParentComp);
 
 	FResizePointMovedDelegate OnResizePointMovedDelegate;
@@ -38,11 +43,13 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		TArray<UResizePoint*> ResizePoints;
 
+	/** The mesh that will be assigned to each ResizePoint */
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 		UStaticMesh* ResizePointMesh;
 
 	/**  */
-	APlayerController* PlayerController;
+	UPROPERTY()
+		APlayerController* PlayerController;
 
 	/** Binds the functions for the InputComponent of the PlayerController  */
 	void SetupInputBinding();
@@ -54,7 +61,9 @@ private:
 	void StopRecordingMovement();
 
 	FVector StartHitPoint;
-	UResizePoint* ResizePointHit;
+
+	UPROPERTY()
+		UResizePoint* ResizePointHit;
 
 	/** Are you actually resizing the mesh? */
 	bool bRecordingMovement;
@@ -65,5 +74,5 @@ private:
 	* @param CheckedPosition - The new position of the Resize Point
 	*/
 	UFUNCTION()
-		void OnPositionChecked(const bool IsValid, const UResizePoint *ResizePointRef, const FVector &CheckedPosition);
+		void OnPositionChecked(const bool IsValid, const UResizePoint *ResizePointRef, FVector &CheckedPosition);
 };

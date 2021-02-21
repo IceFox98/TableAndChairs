@@ -20,7 +20,7 @@ void UResizePoint::BeginPlay()
 	ResizePointManager = Cast<UResizePointManager>(GetOwner()->GetComponentByClass(UResizePointManager::StaticClass()));
 }
 
-void UResizePoint::CheckPosition(const FVector &NewPosition)
+void UResizePoint::CheckPosition(FVector &NewPosition) const
 {
 	bool IsValid = true; //Add any checks here
 

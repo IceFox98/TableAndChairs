@@ -57,13 +57,12 @@ void UDynamicMeshLibrary::BuildQuad(FProceduralMeshData &OutMeshData, const FVec
 	OutMeshData.Tangents[Index1] = OutMeshData.Tangents[Index2] = OutMeshData.Tangents[Index3] = OutMeshData.Tangents[Index4] = FProcMeshTangent(InTangent, false);
 }
 
-
-void UDynamicMeshLibrary::BuildCube(FProceduralMeshData &OutMeshData, const FVector &MeshSize, const FVector &Position, const FColor &Color)
+void UDynamicMeshLibrary::BuildCube(FProceduralMeshData &OutMeshData, const FVector &Size, const FVector &Position, const FColor &Color)
 {
 	// Divide in half the offset to get center of object
-	const float OffsetX = MeshSize.X * .5f;
-	const float OffsetY = MeshSize.Y * .5f;
-	const float OffsetZ = MeshSize.Z * .5f;
+	const float OffsetX = Size.X * .5f;
+	const float OffsetY = Size.Y * .5f;
+	const float OffsetZ = Size.Z * .5f;
 
 	FVector V1 = FVector(-OffsetX, -OffsetY, -OffsetZ) + Position; //Front - Bottom Left
 	FVector V2 = FVector(-OffsetX, OffsetY, -OffsetZ) + Position; //Front - Bottom Right

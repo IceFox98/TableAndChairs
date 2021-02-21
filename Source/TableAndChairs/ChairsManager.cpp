@@ -89,7 +89,6 @@ float UChairsManager::GetTotalChairLength(const int ChairsPerSide, const float T
 
 void UChairsManager::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector SpawnOffset, const int ChairsPerSide, const float TotalChairLength, const EAxes FlipAxis)
 {
-	//float InitialRotation = Parent->GetActorRotation().Yaw;
 	float InitialRotation = 0.f;
 
 	if (FlipAxis == EAxes::X)
@@ -131,7 +130,7 @@ void UChairsManager::CalculateChairsOfAxis(FVector StartSpawnPoint, FVector Spaw
 		FixChairTransform(*ChairToUpdate, StartSpawnPoint, SpawnOffset, InitialRotation + 180.f, FlipAxis);
 
 		//Updating spawn point position
-		//If flip Axis is Y, then you're updating chairs on X Axis
+		//If FlipAxis is Y, then you're updating chairs on X Axis
 		if (FlipAxis == EAxes::Y)
 		{
 			StartSpawnPoint.X -= TotalChairLength;
@@ -150,6 +149,7 @@ void UChairsManager::SpawnChair(const EAxes FlipAxis)
 	if (PooledChair)
 	{
 		PooledChair->SetVisibility(true);
+		PooledChair->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		return;
 	}
 
@@ -165,7 +165,6 @@ void UChairsManager::SpawnChair(const EAxes FlipAxis)
 	//Build spawned chair and add it to Chairs array
 	ChairSpawned->SetupAttachment(Parent);
 	ChairSpawned->RegisterComponent();
-	ChairSpawned->SetVisibility(true);
 
 	ChairSpawned->CreateMeshSection(0, ChairMeshData.Vertices, ChairMeshData.Triangles, ChairMeshData.Normals, ChairMeshData.UVs, ChairMeshData.VertexColors, ChairMeshData.Tangents, true);
 	ChairsOnAxis[FlipAxis].Chairs.Add(ChairSpawned);
@@ -197,6 +196,7 @@ void UChairsManager::SetPooledChair(const EAxes FlipAxis)
 		if (CurrChairs[i]->IsVisible())
 		{
 			CurrChairs[i]->SetVisibility(false);
+			CurrChairs[i]->SetCollisionEnabled(ECollisionEnabled::NoCollision); //Just for right calc of bounds
 			return;
 		}
 	}
@@ -236,3 +236,9 @@ void UChairsManager::FixChairTransform(UProceduralMeshComponent &Chair, FVector 
 	Chair.SetRelativeLocation(NewLocation);
 	Chair.SetRelativeRotation(FRotator(0, Yaw, 0));
 }
+
+FVector UChairsManager::GetChairSeatSize() const
+{
+	return ChairSeatSize;
+}
+

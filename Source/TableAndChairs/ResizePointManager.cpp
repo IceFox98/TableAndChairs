@@ -169,7 +169,7 @@ void UResizePointManager::StopRecordingMovement()
 	StartHitPoint = FVector::ZeroVector;
 }
 
-void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoint *ResizePointRef, const FVector &CheckedPosition)
+void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoint *ResizePointRef, FVector &CheckedPosition)
 {
 	if (!IsValid)
 	{
@@ -191,13 +191,14 @@ void UResizePointManager::OnPositionChecked(const bool IsValid, const UResizePoi
 	float DirectionY = FMath::Sign(ResizePointRef->GetRelativeLocation().Y);
 	const FVector Direction(DirectionX, DirectionY, 1);
 
-	const FVector ClampedPosition = ResizableObject->ClampSize(Direction, CheckedPosition);
-	const FVector NewExtent = ClampedPosition - GetOwner()->GetActorLocation();
+	ResizableObject->ClampSize(Direction, CheckedPosition);
+	const FVector NewExtent = CheckedPosition - GetOwner()->GetActorLocation();
 
 	const bool DoesIntersect = ResizableObject->DoesIntersect(Direction, NewExtent);
 
 	if (DoesIntersect) //If, during resizing, you hit another actor, the resize stops
 	{
+		//UE_LOG(LogTemp, Error, TEXT("Intersect"));
 		return;
 	}
 

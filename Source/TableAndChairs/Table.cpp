@@ -7,6 +7,8 @@
 #include "ChairsManager.h"
 #include "DynamicMeshLibrary.h"
 #include "EngineUtils.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 ATable::ATable()
@@ -39,7 +41,7 @@ void ATable::BeginPlay()
 	//Calculate table location
 	const FVector LegSize = LegsManager->GetLegSize();
 	const FVector PositionOffset = FVector(0, 0, LegSize.Z + (Size.Z * .5f));
-	SetActorLocation(GetActorLocation() + PositionOffset);
+	SetActorLocation(GetActorLocation() + PositionOffset); //Re-position the table depending on the leg height
 
 	USceneComponent* const Root = GetRootComponent();
 
@@ -80,9 +82,7 @@ FVector ATable::ResizeMesh(const FVector &Direction, const FVector &NewExtent)
 	if (DeltaSize != FVector::ZeroVector)
 	{
 		//Move the Actor by half of the movement
-		FVector DeltaPosition = (DeltaSize * Direction) * .5f;
-		DeltaPosition.Z = 0;
-		const FVector NewCenter = GetActorLocation() + DeltaPosition;
+		const FVector NewCenter = GetNewCenter(Direction, DeltaSize);
 
 		//Get new size
 		FVector NewSize = CurrentSize + DeltaSize;
@@ -98,25 +98,23 @@ FVector ATable::ResizeMesh(const FVector &Direction, const FVector &NewExtent)
 	return DeltaSize;
 }
 
-FVector ATable::ClampSize(const FVector &Direction, const FVector &SizeToCheck)
+void ATable::ClampSize(const FVector &Direction, FVector &OutSizeToClamp) const
 {
 	const FVector ActorLocation = GetActorLocation();
-
-	FVector ReturnSize = SizeToCheck;
 
 	//Just because when we resize the mesh, the pivot is always in the center
 	const FVector MaxSizeHalf = MaxSize * .5f;
 	const FVector MinSizeHalf = MinSize * .5f;
 
-	float DiffX = FMath::Abs(SizeToCheck.X - ActorLocation.X);
-	float DiffY = FMath::Abs(SizeToCheck.Y - ActorLocation.Y);
+	float DiffX = FMath::Abs(OutSizeToClamp.X - ActorLocation.X);
+	float DiffY = FMath::Abs(OutSizeToClamp.Y - ActorLocation.Y);
 
 	//When you exceed (with the mouse) the min size, re-set the abs difference so that it clamps automatically
-	if (FMath::Sign(SizeToCheck.X - ActorLocation.X) != FMath::Sign(Direction.X))
+	if (FMath::Sign(OutSizeToClamp.X - ActorLocation.X) != FMath::Sign(Direction.X))
 	{
 		DiffX = MinSizeHalf.X - 1.f; //Just for clamp
 	}
-	if (FMath::Sign(SizeToCheck.Y - ActorLocation.Y) != FMath::Sign(Direction.Y))
+	if (FMath::Sign(OutSizeToClamp.Y - ActorLocation.Y) != FMath::Sign(Direction.Y))
 	{
 		DiffY = MinSizeHalf.Y - 1.f;
 	}
@@ -124,55 +122,61 @@ FVector ATable::ClampSize(const FVector &Direction, const FVector &SizeToCheck)
 	//Clamping
 	if (DiffX > MaxSizeHalf.X || DiffX < MinSizeHalf.X)
 	{
-		ReturnSize.X = (FMath::Clamp(DiffX, MinSizeHalf.X, MaxSizeHalf.X) * Direction.X) + ActorLocation.X;
+		OutSizeToClamp.X = (FMath::Clamp(DiffX, MinSizeHalf.X, MaxSizeHalf.X) * Direction.X) + ActorLocation.X;
 	}
 	if (DiffY > MaxSizeHalf.Y || DiffY < MinSizeHalf.Y)
 	{
-		ReturnSize.Y = (FMath::Clamp(DiffY, MinSizeHalf.Y, MaxSizeHalf.Y) * Direction.Y) + ActorLocation.Y;
+		OutSizeToClamp.Y = (FMath::Clamp(DiffY, MinSizeHalf.Y, MaxSizeHalf.Y) * Direction.Y) + ActorLocation.Y;
 	}
-
-	return ReturnSize;
 }
 
 bool ATable::DoesIntersect(const FVector &Direction, const FVector &Extent)
 {
-	const FVector BoxExtent = Extent.GetAbs();
-	const FVector DeltaSize = BoxExtent - (CurrentSize * .5f);
+	if (!ChairsManager)
+	{
+		return false;
+	}
+
+	const FVector DeltaSize = Extent.GetAbs() - (CurrentSize * .5f);
+	bool bDoesIntersect = false;
 
 	if (DeltaSize != FVector::ZeroVector)
 	{
-		//TODO: Duplicated code
-		FVector DeltaPosition = (DeltaSize * Direction) * .5f;
-		DeltaPosition.Z = 0;
-		const FVector Center = GetActorLocation() + DeltaPosition;
+		const float DistanceFromTables = 10.f;
 
-		//Simulate FBox of the resized table 
-		const FBox TableBox(Center - BoxExtent, Center + BoxExtent);
+		//Add half of the chair size, just for check the overlapping
+		const FVector BoxExtent = (CurrentSize + DeltaSize + ChairsManager->GetChairSeatSize().X) * .5f + DistanceFromTables;
 
-		for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
-		{
-			UProceduralMeshComponent* Mesh = Cast<UProceduralMeshComponent>(ActorItr->GetComponentByClass(UProceduralMeshComponent::StaticClass()));
+		const FVector Center = GetNewCenter(Direction, DeltaSize);
+		TArray<AActor*> OverlappedActors;
+		TArray<AActor*> ActorsToIgnore = { this };
 
-			//TODO: Pointers compare?
-			if (!Mesh || ActorItr->GetName() == this->GetName()) //Ignoring this Actor and others like Floor, Walls, Sky etc...
-			{
-				continue;
-			}
+		//ObjectTypes: "Add to the outer list every Actor that is of these types"
+		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic)); //For ResizePoints
 
-			const bool bIntersect = Mesh->Bounds.GetBox().IntersectXY(TableBox);
+		//Class Filter: "Remove from the outer list anything that has this class"
+		bDoesIntersect = UKismetSystemLibrary::BoxOverlapActors(GetWorld(), Center, BoxExtent, ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
 
-			if (bIntersect)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("The Table intersects with another actor. %s"), *ActorItr->GetName());
-				return true;
-			}
-		}
+#if WITH_EDITOR
+		const FColor TargetColor = bDoesIntersect ? FColor::Red : FColor::Green;
+		DrawDebugBox(GetWorld(), Center, BoxExtent, TargetColor);
+#endif
+
 	}
 
-	return false;
+	return bDoesIntersect;
 }
 
-FVector ATable::GetMeshSize()
+FVector ATable::GetMeshSize() const
 {
 	return Size;
+}
+
+FVector ATable::GetNewCenter(const FVector &Direction, const FVector &DeltaSize) const
+{
+	FVector DeltaPosition = (DeltaSize * Direction) * .5f;
+	DeltaPosition.Z = 0;
+	return GetActorLocation() + DeltaPosition;
 }

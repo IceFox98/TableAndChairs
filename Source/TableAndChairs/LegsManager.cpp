@@ -78,7 +78,7 @@ void ULegsManager::UpdateLegsPosition(const FVector &ParentExtent)
 	}
 }
 
-FVector ULegsManager::GetLegSize()
+FVector ULegsManager::GetLegSize() const
 {
 	return LegSize;
 }
