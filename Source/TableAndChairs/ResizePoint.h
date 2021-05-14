@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "ResizePoint.generated.h"
 
+DECLARE_DELEGATE_ThreeParams(FResizePointMovedDelegate, const bool, const UResizePoint*, FVector&)
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TABLEANDCHAIRS_API UResizePoint : public UStaticMeshComponent
@@ -16,10 +17,6 @@ public:
 	// Sets default values for this component's properties
 	UResizePoint();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
 public:
 	/**
 	 * Checks the passed position and calls the delegate OnResizePointMovedDelegate
@@ -27,8 +24,5 @@ public:
 	 */
 	void CheckPosition(FVector &NewPosition) const;
 
-private:
-
-	UPROPERTY()
-		class UResizePointManager* ResizePointManager;
+	FResizePointMovedDelegate OnResizePointMovedDelegate;
 };

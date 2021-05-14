@@ -89,5 +89,5 @@ private:
 	 * @param Direction - The direction of the resizing (Unit vector)
 	 * @param DeltaSize - How much the table should be resized.
 	 */
-	FVector GetNewCenter(const FVector &Direction, const FVector &DeltaSize) const;
+	FVector CalculateNewCenter(const FVector &Direction, const FVector &DeltaSize) const;
 };

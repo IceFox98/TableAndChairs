@@ -12,20 +12,9 @@ UResizePoint::UResizePoint()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-// Called when the game starts
-void UResizePoint::BeginPlay()
-{
-	Super::BeginPlay();
-
-	ResizePointManager = Cast<UResizePointManager>(GetOwner()->GetComponentByClass(UResizePointManager::StaticClass()));
-}
-
 void UResizePoint::CheckPosition(FVector &NewPosition) const
 {
 	bool IsValid = true; //Add any checks here
 
-	if (ResizePointManager)
-	{
-		ResizePointManager->OnResizePointMovedDelegate.ExecuteIfBound(IsValid, this, NewPosition);
-	}
+	OnResizePointMovedDelegate.ExecuteIfBound(IsValid, this, NewPosition);
 }

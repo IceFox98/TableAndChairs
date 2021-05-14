@@ -19,7 +19,6 @@ void UResizePointManager::BeginPlay()
 	Super::BeginPlay();
 
 	SetupInputBinding();
-	OnResizePointMovedDelegate.BindUObject(this, &UResizePointManager::OnPositionChecked);
 }
 
 void UResizePointManager::SetupInputBinding()
@@ -120,6 +119,7 @@ void UResizePointManager::InitializePoints(const FVector &ParentExtent, USceneCo
 		ResizePoint->SetupAttachment(ParentComp);
 		ResizePoint->RegisterComponent();
 		ResizePoint->SetRelativeLocation(Positions[i]);
+		ResizePoint->OnResizePointMovedDelegate.BindUObject(this, &UResizePointManager::OnPositionChecked);
 
 		ResizePoints.Add(ResizePoint);
 	}

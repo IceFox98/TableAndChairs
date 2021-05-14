@@ -10,8 +10,6 @@
 
 class UResizePoint;
 
-DECLARE_DELEGATE_ThreeParams(FResizePointMovedDelegate, const bool, const UResizePoint*, FVector&)
-
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TABLEANDCHAIRS_API UResizePointManager : public UActorComponent
 {
@@ -35,8 +33,6 @@ public:
 	 * @param ParentComp - The Component whose ResizePoints will be attached to
 	 */
 	void InitializePoints(const FVector &ParentExtent, USceneComponent* ParentComp);
-
-	FResizePointMovedDelegate OnResizePointMovedDelegate;
 
 private:
 

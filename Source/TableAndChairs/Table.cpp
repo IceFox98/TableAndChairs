@@ -82,7 +82,7 @@ FVector ATable::ResizeMesh(const FVector &Direction, const FVector &NewExtent)
 	if (DeltaSize != FVector::ZeroVector)
 	{
 		//Move the Actor by half of the movement
-		const FVector NewCenter = GetNewCenter(Direction, DeltaSize);
+		const FVector NewCenter = CalculateNewCenter(Direction, DeltaSize);
 
 		//Get new size
 		FVector NewSize = CurrentSize + DeltaSize;
@@ -147,7 +147,7 @@ bool ATable::DoesIntersect(const FVector &Direction, const FVector &Extent)
 		//Add half of the chair size, just for check the overlapping
 		const FVector BoxExtent = (CurrentSize + DeltaSize + ChairsManager->GetChairSeatSize().X) * .5f + DistanceFromTables;
 
-		const FVector Center = GetNewCenter(Direction, DeltaSize);
+		const FVector Center = CalculateNewCenter(Direction, DeltaSize);
 		TArray<AActor*> OverlappedActors;
 		TArray<AActor*> ActorsToIgnore = { this };
 
@@ -174,7 +174,7 @@ FVector ATable::GetMeshSize() const
 	return Size;
 }
 
-FVector ATable::GetNewCenter(const FVector &Direction, const FVector &DeltaSize) const
+FVector ATable::CalculateNewCenter(const FVector &Direction, const FVector &DeltaSize) const
 {
 	FVector DeltaPosition = (DeltaSize * Direction) * .5f;
 	DeltaPosition.Z = 0;
