@@ -39,6 +39,11 @@ void ULegsManager::BuildLegs(USceneComponent* ParentComp)
 
 			LegSpawned->CreateMeshSection(0, LegMeshData.Vertices, LegMeshData.Triangles, LegMeshData.Normals, LegMeshData.UVs, LegMeshData.VertexColors, LegMeshData.Tangents, true);
 
+			if (LegMaterial)
+			{
+				LegSpawned->SetMaterial(0, LegMaterial);
+			}
+
 			Legs.Add(LegSpawned);
 		}
 	}

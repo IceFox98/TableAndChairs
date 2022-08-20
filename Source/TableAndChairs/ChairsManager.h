@@ -87,6 +87,9 @@ private:
 	/** How far chair is form the bottom side of the table */
 	float ChairOffsetZ;
 
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+		UMaterial* ChairMaterial;
+
 	UPROPERTY()
 		USceneComponent* Parent;
 

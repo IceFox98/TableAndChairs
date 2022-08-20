@@ -167,6 +167,11 @@ void UChairsManager::SpawnChair(const EAxes FlipAxis)
 	ChairSpawned->RegisterComponent();
 
 	ChairSpawned->CreateMeshSection(0, ChairMeshData.Vertices, ChairMeshData.Triangles, ChairMeshData.Normals, ChairMeshData.UVs, ChairMeshData.VertexColors, ChairMeshData.Tangents, true);
+	if (ChairMaterial)
+	{
+		ChairSpawned->SetMaterial(0, ChairMaterial);
+	}
+
 	ChairsOnAxis[FlipAxis].Chairs.Add(ChairSpawned);
 }
 

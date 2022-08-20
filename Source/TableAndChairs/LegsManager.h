@@ -42,4 +42,7 @@ private:
 	/** The Array which contains each spawned legs */
 	UPROPERTY(VisibleAnywhere)
 		TArray<UProceduralMeshComponent*> Legs;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+		UMaterial* LegMaterial;
 };

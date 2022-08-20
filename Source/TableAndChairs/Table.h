@@ -60,6 +60,10 @@ private:
 	/** The minimum size of the table */
 	UPROPERTY(EditAnywhere)
 		FVector MinSize;
+	
+	/** The material applied to procedural mesh */
+	UPROPERTY(EditDefaultsOnly)
+		UMaterial* MeshMaterial;
 
 	/** The current size of the mesh */
 	FVector CurrentSize;

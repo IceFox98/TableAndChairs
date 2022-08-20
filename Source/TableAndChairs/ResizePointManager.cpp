@@ -121,6 +121,11 @@ void UResizePointManager::InitializePoints(const FVector &ParentExtent, USceneCo
 		ResizePoint->SetRelativeLocation(Positions[i]);
 		ResizePoint->OnResizePointMovedDelegate.BindUObject(this, &UResizePointManager::OnPositionChecked);
 
+		if (ResizePointMaterial)
+		{
+			ResizePoint->SetMaterial(0, ResizePointMaterial);
+		}
+
 		ResizePoints.Add(ResizePoint);
 	}
 }

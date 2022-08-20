@@ -28,6 +28,7 @@ ATable::ATable()
 
 	MaxSize = FVector(1000.f, 1000.f, 20.f);
 	MinSize = FVector(200.f, 200.f, 20.f);
+
 }
 
 // Called when the game starts or when spawned
@@ -56,6 +57,11 @@ void ATable::BeginPlay()
 	//Create Chairs
 	ChairsManager->Initialize(LegSize, Root);
 	ChairsManager->UpdateChairs(Size);
+
+	if (MeshMaterial)
+	{
+		ProceduralMeshComponent->SetMaterial(0, MeshMaterial);
+	}
 }
 
 void ATable::BuildMesh(const FVector &Center, const FVector &MeshSize, const bool Update)

@@ -39,9 +39,12 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		TArray<UResizePoint*> ResizePoints;
 
-	/** The mesh that will be assigned to each ResizePoint */
+	/** The mesh of the Resize Point */
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 		UStaticMesh* ResizePointMesh;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+		UMaterial* ResizePointMaterial;
 
 	/**  */
 	UPROPERTY()
